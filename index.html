@@ -1,0 +1,1041 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="description" content="Turn any photo into a numbered paint-by-number template, with a mixing recipe for every color."><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Paint by Photo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Recursive:slnt,wght,CASL,CRSV,MONO@-15..0,300..1000,0..1,0..1,0..1&display=swap">
+<style>
+/* Layout: a slim app bar over a wide workspace. The library is a card grid; setup and painting split into a large canvas stage and a 380px side panel, stacking to one column on phones. */
+:root {
+  --bg: #EEF0F4; --surface: #FFFFFF; --sunken: #E3E6EC; --ink: #17181C; --muted: #5A606C; --line: #D3D7DF;
+  --accent: #B4235F; --accent-soft: #F6E1EA; --on-accent: #FFFFFF; --good: #1E7A52; --paper: #FFFFFF;
+  --shadow: 0 1px 2px rgba(23, 24, 28, 0.06), 0 10px 28px rgba(23, 24, 28, 0.08);
+  --sans: 'Recursive', ui-rounded, 'Segoe UI', system-ui, sans-serif;
+  --mono: 'Recursive', ui-monospace, 'SF Mono', Menlo, monospace;
+  --gutter: clamp(16px, 4vw, 40px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #111216; --surface: #1A1C21; --sunken: #24272D; --ink: #ECEDF0; --muted: #A2A8B3; --line: #32363E; --accent: #F06B9E; --accent-soft: #3A1E2A; --on-accent: #1A0B11; --good: #67CF9C; --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 28px rgba(0, 0, 0, 0.35); color-scheme: dark }
+}
+:root[data-theme="dark"] { --bg: #111216; --surface: #1A1C21; --sunken: #24272D; --ink: #ECEDF0; --muted: #A2A8B3; --line: #32363E; --accent: #F06B9E; --accent-soft: #3A1E2A; --on-accent: #1A0B11; --good: #67CF9C; --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 28px rgba(0, 0, 0, 0.35); color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-variation-settings: 'CASL' 0; font-size: 15px; line-height: 1.5 }
+button, input { font: inherit; color: inherit }
+h1, h2, p { margin: 0 }
+h1 { font-weight: 800; font-variation-settings: 'CASL' 1; font-size: clamp(28px, 3.4vw, 40px); line-height: 1.05; letter-spacing: -0.015em; text-wrap: balance }
+h2 { font-weight: 750; font-variation-settings: 'CASL' 1; font-size: 18px; line-height: 1.2 }
+.h-sm { font-size: clamp(22px, 2.4vw, 28px) }
+.lede { color: var(--muted); font-size: 16px; max-width: 52ch; margin-top: 8px }
+.muted { color: var(--muted) }
+.small { font-size: 13px }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted) }
+.mono { font-family: var(--mono); font-variation-settings: 'MONO' 1; font-variant-numeric: tabular-nums }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px }
+.pick input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px }
+
+/* app bar */
+.appbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); border-bottom: 1px solid var(--line) }
+.appbar-in { max-width: 1320px; margin-inline: auto; padding-inline: var(--gutter); height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 16px }
+.brand { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; font-weight: 800; font-variation-settings: 'CASL' 1; font-size: 19px; letter-spacing: -0.01em }
+.mark { width: 30px; height: 30px; flex: none }
+.mark .frame { fill: var(--surface); stroke: var(--ink); stroke-width: 2 }
+.mark .fill { fill: var(--accent) }
+.mark .ln { fill: none; stroke: var(--ink); stroke-width: 1.6 }
+.bar-note { font-size: 13px; color: var(--muted) }
+
+.app { max-width: 1320px; margin-inline: auto; padding-inline: var(--gutter); padding-block: 28px 72px }
+.screen { display: flex; flex-direction: column; gap: 24px; min-width: 0 }
+.pagehead { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 24px }
+.pagehead.slim { align-items: center; justify-content: flex-start; gap: 8px 16px }
+.ph-actions { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px }
+
+/* controls */
+.btn { box-sizing: border-box; min-height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-weight: 650; font-size: 15px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center; transition: border-color 0.15s, transform 0.15s }
+.btn:hover { border-color: var(--ink) }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent) }
+.btn.primary:hover { transform: translateY(-1px) }
+.btn.quiet { background: transparent; border-color: transparent; color: var(--muted); font-weight: 600 }
+.btn.quiet:hover { border-color: var(--line); color: var(--ink) }
+.btn.wide { width: 100% }
+.back { min-height: 40px; padding: 0 12px 0 6px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-weight: 600; cursor: pointer }
+.back:hover { color: var(--ink); background: var(--sunken) }
+.seg { display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 3px; border-radius: 10px; background: var(--sunken) }
+.seg button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap }
+.seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); font-weight: 750; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12) }
+
+/* new artwork menu */
+.addwrap { position: relative }
+.addmenu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 20; width: min(320px, calc(100vw - 32px)); box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow) }
+.addmenu .btn { width: 100% }
+.pick { position: relative; display: flex; flex-direction: column }
+.pick input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 1; font-size: 0 }
+.paste { min-height: 48px; box-sizing: border-box; padding: 12px 14px; border: 1.5px dashed var(--line); border-radius: 10px; font-size: 14px; color: var(--ink) }
+.paste:empty::before { content: 'Or copy a photo, then paste it here'; color: var(--muted) }
+
+/* library */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr)); gap: 16px }
+@media (min-width: 720px) { .grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px } }
+.art { padding: 8px 8px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 10px; min-width: 0; transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s }
+.art:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: transparent }
+.thumb { position: relative; display: block; border-radius: 9px; overflow: hidden; background: var(--paper); aspect-ratio: 4 / 3; max-width: 100% }
+.thumb img { display: block; width: 100%; height: 100%; object-fit: cover }
+.bar { position: absolute; left: 8px; right: 8px; bottom: 8px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 0 1px rgba(23, 24, 28, 0.25); overflow: hidden }
+.bar i { display: block; height: 100%; background: var(--accent) }
+.meta { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; padding-inline: 4px; align-items: baseline }
+.meta .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; font-size: 15px }
+.meta .p { font-family: var(--mono); font-variation-settings: 'MONO' 1; font-size: 13px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums }
+.meta .sub { grid-column: 1 / -1; font-size: 13px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+
+/* split screens */
+.split { display: grid; gap: 20px; align-items: start }
+@media (min-width: 960px) {
+  .split { grid-template-columns: minmax(0, 1fr) 380px; gap: 28px }
+  .stagecol { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 80px) }
+}
+.stagecol { min-width: 0 }
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden }
+.stagebar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 10px 12px; border-bottom: 1px solid var(--line) }
+.canvaswell { background: var(--sunken); padding: clamp(12px, 2.4vw, 28px); display: flex; justify-content: center }
+.hint { padding: 10px 14px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line) }
+#cfgview { display: block; width: auto; height: auto; max-width: 100%; max-height: max(240px, calc(100vh - 300px)); max-height: max(240px, calc(100dvh - 300px)); border-radius: 4px; background: var(--paper); box-shadow: var(--shadow) }
+#zwrap { position: relative; width: 100%; max-width: max(240px, calc((100vh - 310px) * var(--ar, 1.3333))); max-width: max(240px, calc((100dvh - 310px) * var(--ar, 1.3333))); overflow: hidden; border-radius: 4px; background: var(--paper); box-shadow: var(--shadow) }
+.zoomlayer { position: relative; transform-origin: 0 0; touch-action: pan-y; cursor: pointer }
+#finview { display: block; width: 100%; height: auto }
+#nums { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none }
+#nums text { fill: #2A2D35; font-family: var(--mono); font-variation-settings: 'MONO' 1; font-weight: 600; text-anchor: middle }
+.zoombtns { display: flex; gap: 6px }
+.zoombtns button { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-weight: 700; font-size: 20px; line-height: 1; cursor: pointer }
+.zoombtns button:hover:not(:disabled) { border-color: var(--ink) }
+.zoombtns button:disabled { opacity: 0.4; cursor: default }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 18px; min-width: 0 }
+.panelsec { display: flex; flex-direction: column; gap: 10px }
+
+/* difficulty */
+.levels { display: flex; flex-direction: column; gap: 10px }
+.lvl { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); transition: border-color 0.15s }
+.lvl.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent) }
+.lvlhead { width: 100%; box-sizing: border-box; min-height: 60px; padding: 14px 16px; border: 0; border-radius: 12px; background: transparent; text-align: left; cursor: pointer; display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline }
+.dot { grid-row: 1 / span 2; align-self: start; margin-top: 3px; width: 16px; height: 16px; border-radius: 50%; box-sizing: border-box; border: 2px solid var(--line) }
+.lvl.on .dot { border: 5px solid var(--accent) }
+.lvlname { font-weight: 750; font-variation-settings: 'CASL' 1; font-size: 17px }
+.lvlmeta { font-family: var(--mono); font-variation-settings: 'MONO' 1; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums }
+.lvldesc { grid-column: 2 / -1; color: var(--muted); font-size: 14px }
+.lvlbody { padding: 0 16px 14px 46px; display: flex; flex-direction: column; gap: 2px }
+.sliderhead { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; font-size: 14px; font-weight: 600 }
+.lvlbody .val { font-family: var(--mono); font-variation-settings: 'MONO' 1; font-variant-numeric: tabular-nums }
+input[type="range"] { width: 100%; height: 36px; margin: 0; accent-color: var(--accent) }
+.ticks { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted) }
+
+/* painting panel */
+.titlerow { display: flex; align-items: center; gap: 8px }
+.titlerow .btn { flex: none }
+.titleinput { flex: 1; min-width: 0; width: 100%; box-sizing: border-box; min-height: 48px; padding: 0 10px; margin-left: -10px; border: 1px solid transparent; border-radius: 10px; background: transparent; font-weight: 800; font-variation-settings: 'CASL' 1; font-size: 24px; letter-spacing: -0.01em }
+.titleinput:hover, .titleinput:focus { border-color: var(--line); background: var(--bg) }
+.actions { display: flex; flex-wrap: wrap; gap: 8px }
+.msg { font-size: 14px; color: var(--muted) }
+.sheet { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--paper) }
+.proghead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px }
+.proghead .mono { font-size: 13px; font-weight: 600 }
+.track { height: 8px; border-radius: 4px; background: var(--sunken); overflow: hidden }
+.track i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.3s }
+.colorshead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px }
+.sortnote { padding-block: 8px 10px; border-bottom: 1px solid var(--line) }
+.acc { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column;  }
+.acc > li { border-bottom: 1px solid var(--line) }
+.rowhead { display: flex; align-items: center; gap: 4px }
+.rowbtn { flex: 1; min-width: 0; min-height: 60px; padding: 0; border: 0; background: transparent; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 12px }
+.pot { flex: none; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-variation-settings: 'MONO' 1; font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18), 0 0 0 3px var(--surface), 0 0 0 4px var(--line) }
+.nm { flex: 1; min-width: 0; display: flex; flex-direction: column; font-weight: 650 }
+.cov { font-size: 12px; font-weight: 500; color: var(--muted) }
+.done .pot { opacity: 0.45 }
+.done .nm > span:first-child { color: var(--muted); text-decoration: line-through }
+.chev { flex: none; color: var(--muted); transition: transform 0.15s }
+.rowbtn[aria-expanded="true"] .chev { transform: rotate(180deg) }
+.tick { flex: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer }
+.tick input { width: 22px; height: 22px; margin: 0; accent-color: var(--good); cursor: pointer }
+.recipe { padding: 0 0 14px 50px; display: flex; flex-direction: column; gap: 8px }
+.mix { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px }
+.mix li { display: flex; align-items: center; gap: 10px; min-height: 34px; font-size: 14px }
+.mix .blobbox { flex: none; width: 32px; display: flex; justify-content: center }
+.mix .blob { border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18) }
+.mix .name { flex: 1; min-width: 0 }
+.mix .parts { font-family: var(--mono); font-variation-settings: 'MONO' 1; font-weight: 600; font-size: 13px; white-space: nowrap }
+.panelfoot { display: flex; justify-content: flex-end }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important } }
+</style>
+
+<header class="appbar">
+  <div class="appbar-in">
+    <button type="button" class="brand" data-nav="dash" aria-label="Paint by Photo, go to your library">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect class="frame" x="1.5" y="1.5" width="29" height="29" rx="7"></rect>
+        <path class="fill" d="M2.5 20.5 C8 15.5 13 22 19 16.5 S27 12.5 29.5 14 V26 a3.5 3.5 0 0 1 -3.5 3.5 H6 a3.5 3.5 0 0 1 -3.5 -3.5 Z"></path>
+        <path class="ln" d="M2.5 20.5 C8 15.5 13 22 19 16.5 S27 12.5 29.5 14"></path>
+        <circle class="ln" cx="10" cy="10" r="3.6"></circle>
+      </svg>
+      <span>Paint by Photo</span>
+    </button>
+    <span class="bar-note">Saved in this browser</span>
+  </div>
+</header>
+<main class="app">
+  <section class="screen" id="s-dash">
+    <div class="pagehead">
+      <div>
+        <h1>Your artworks</h1>
+        <p class="lede">Turn any photo into a numbered painting template, then tick off each color as you paint it.</p>
+      </div>
+      <div class="ph-actions">
+        <div class="seg" role="tablist" aria-label="Library">
+          <button type="button" role="tab" id="tab-outline" aria-selected="true">Outline</button>
+          <button type="button" role="tab" id="tab-refs" aria-selected="false">References</button>
+        </div>
+        <div class="addwrap">
+          <button type="button" class="btn primary" id="add" aria-expanded="false" aria-controls="addmenu">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 4v16M4 12h16"></path></svg>
+            New artwork
+          </button>
+          <div class="addmenu" id="addmenu" hidden>
+            <p class="eyebrow">Start from a photo</p>
+            <div class="pick"><input type="file" id="file" accept="image/*"><label class="btn primary" for="file">Browse files</label></div>
+            <div class="pick"><input type="file" id="cam" accept="image/*" capture="environment"><label class="btn" for="cam">Take photo</label></div>
+            <div class="paste" id="pastebox" contenteditable="true" role="textbox" aria-label="Paste a copied photo here"></div>
+            <p class="small muted" id="pickstatus" aria-live="polite" hidden>If no photo picker appeared, paste a copied photo above instead.</p>
+            <p class="small muted" id="fileerr" role="alert" hidden>That could not be opened as an image. Try a JPG or PNG.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="muted" id="dashnote"></p>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section class="screen" id="s-config" hidden>
+    <div class="pagehead slim">
+      <button type="button" class="back" data-nav="dash">&larr; Library</button>
+      <h1 class="h-sm">Set up your template</h1>
+    </div>
+    <div class="split">
+      <div class="stagecol">
+        <div class="stage">
+          <div class="stagebar">
+            <span class="eyebrow">Preview</span>
+            <div class="seg" role="group" aria-label="Preview">
+              <button type="button" id="v-color" aria-pressed="true">Colored</button>
+              <button type="button" id="v-line" aria-pressed="false">Line art</button>
+            </div>
+          </div>
+          <div class="canvaswell"><canvas id="cfgview" width="960" height="720" role="img" aria-label="Preview of your artwork with the current settings"></canvas></div>
+        </div>
+      </div>
+      <aside class="panel">
+        <div class="panelsec">
+          <h2 id="difflabel">Difficulty</h2>
+          <p class="small muted">Store-bought kits run from about 24 colors for beginners to 48 or more for advanced painters.</p>
+        </div>
+        <div class="levels" id="levels" role="group" aria-labelledby="difflabel"></div>
+        <p class="small muted" id="lvlnote" aria-live="polite"></p>
+        <button type="button" class="btn primary wide" id="next">Create template</button>
+      </aside>
+    </div>
+  </section>
+
+  <section class="screen" id="s-final" hidden>
+    <div class="pagehead slim">
+      <button type="button" class="back" id="finback">&larr; Library</button>
+    </div>
+    <div class="split">
+      <div class="stagecol">
+        <div class="stage">
+          <div class="stagebar">
+            <div class="seg" role="group" aria-label="Artwork view">
+              <button type="button" id="f-line" aria-pressed="true">Line art</button>
+              <button type="button" id="f-color" aria-pressed="false">Colored</button>
+            </div>
+            <div class="zoombtns">
+              <button type="button" id="zout" aria-label="Zoom out">&minus;</button>
+              <button type="button" id="zin" aria-label="Zoom in">+</button>
+            </div>
+          </div>
+          <div class="canvaswell">
+            <div id="zwrap">
+              <div class="zoomlayer" id="zlayer">
+                <canvas id="finview" width="960" height="720" role="img" aria-label="Numbered line work. Colors you have ticked are filled in."></canvas>
+                <svg id="nums" viewBox="0 0 960 720" aria-hidden="true"></svg>
+              </div>
+            </div>
+          </div>
+          <p class="hint">Pinch or use + and − to read small numbers, drag to move around, and tap a shape to find its color.</p>
+        </div>
+      </div>
+      <aside class="panel">
+        <div class="panelsec">
+          <div class="titlerow">
+            <input type="text" class="titleinput" id="title" aria-label="Artwork title" maxlength="40">
+            <button type="button" class="btn primary" id="save" hidden>Save</button>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn" id="print">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>
+              Download print sheet
+            </button>
+          </div>
+          <p class="msg" id="finmsg" aria-live="polite" hidden></p>
+          <img class="sheet" id="sheetimg" alt="Printable line work with numbers and the color list" hidden>
+        </div>
+        <div class="panelsec">
+          <div class="proghead"><span class="eyebrow">Progress</span><span class="mono" id="colcount"></span></div>
+          <div class="track"><i id="progfill"></i></div>
+        </div>
+        <div>
+          <div class="colorshead">
+            <h2>Colors</h2>
+            <div class="seg" role="group" aria-label="Sort colors">
+              <button type="button" id="sort-num" aria-pressed="true">By number</button>
+              <button type="button" id="sort-amt" aria-pressed="false">Most used</button>
+            </div>
+          </div>
+          <p class="small muted sortnote" id="sortnote"></p>
+          <ul class="acc" id="colors-list"></ul>
+        </div>
+        <div class="panelfoot"><button type="button" class="btn quiet" id="del">Delete artwork</button></div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ---------- colour maths ---------- */
+const s2l = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+const l2s = c => { c = Math.min(1, Math.max(0, c)); return Math.round(255 * (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055)); };
+const labf = t => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+function lin2lab(r, g, b) {
+  const X = (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047, Y = 0.2126 * r + 0.7152 * g + 0.0722 * b, Z = (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883;
+  const fx = labf(X), fy = labf(Y), fz = labf(Z);
+  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+}
+function lab2rgb(L, a, b) {
+  const fy = (L + 16) / 116, fx = fy + a / 500, fz = fy - b / 200;
+  const g = t => t * t * t > 0.008856 ? t * t * t : (t - 16 / 116) / 7.787;
+  const X = g(fx) * 0.95047, Y = g(fy), Z = g(fz) * 1.08883;
+  return [l2s(3.2406 * X - 1.5372 * Y - 0.4986 * Z), l2s(-0.9689 * X + 1.8758 * Y + 0.0415 * Z), l2s(0.0557 * X - 0.2040 * Y + 1.0570 * Z)];
+}
+const css = c => 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+
+/* ---------- starter palette and a simplified pigment mixing model ----------
+   Each paint absorbs (K) and scatters (S) light in three bands. Mixes add K and S
+   by parts, which behaves like paint (blue + yellow goes green, white tints strongly). */
+const PAINTS = [
+  { n: 'Permanent white', h: '#F6F4EE', s: 6 }, { n: 'Ivory black', h: '#22201F' },
+  { n: 'Lemon yellow', h: '#F0D63A' }, { n: 'Yellow ochre', h: '#C9972E' },
+  { n: 'Cadmium red', h: '#D5432F' }, { n: 'Alizarin crimson', h: '#8E2238' },
+  { n: 'Ultramarine', h: '#2B3A9E' }, { n: 'Cerulean blue', h: '#3E8FC4' },
+  { n: 'Burnt sienna', h: '#8A4A2B' }, { n: 'Viridian', h: '#1F7A66' }
+];
+PAINTS.forEach(p => {
+  p.S = p.s || 1;
+  p.K = [1, 3, 5].map(i => { const R = Math.min(0.98, Math.max(0.02, s2l(parseInt(p.h.substr(i, 2), 16)))); return (1 - R) * (1 - R) / (2 * R) * p.S; });
+});
+function mixLin(ids, parts) {
+  const out = [0, 0, 0];
+  for (let c = 0; c < 3; c++) {
+    let K = 0, S = 0;
+    for (let i = 0; i < ids.length; i++) { const p = PAINTS[ids[i]]; K += parts[i] * p.K[c]; S += parts[i] * p.S; }
+    const q = K / S; out[c] = 1 + q - Math.sqrt(q * q + 2 * q);
+  }
+  return out;
+}
+const gcd = (a, b) => b ? gcd(b, a % b) : a;
+let CANDS = null;
+function candidates() {
+  if (CANDS) return CANDS;
+  const V = [0.5, 1, 2, 3, 4, 6], out = [], n = PAINTS.length;
+  const ok = parts => { const mn = Math.min.apply(null, parts), mx = Math.max.apply(null, parts); return mn === 0.5 ? mx >= 2 : parts.reduce(gcd) === 1; };
+  const add = (ids, parts) => {
+    const lin = mixLin(ids, parts); let tot = 0; for (const p of parts) tot += p;
+    out.push({ ids, parts, lin, lab: lin2lab(lin[0], lin[1], lin[2]), pen: 1.5 * (ids.length - 1) + 0.15 * tot });
+  };
+  for (let i = 0; i < n; i++) add([i], [1]);
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) for (const a of V) for (const b of V) if (ok([a, b])) add([i, j], [a, b]);
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) for (let k = j + 1; k < n; k++)
+    for (const a of V) for (const b of V) for (const c of V) if (ok([a, b, c])) add([i, j, k], [a, b, c]);
+  return (CANDS = out);
+}
+function bestRecipe(lab) {
+  let best = null, bs = 1e9, bd = 0;
+  for (const c of candidates()) {
+    const d = Math.hypot(c.lab[0] - lab[0], c.lab[1] - lab[1], c.lab[2] - lab[2]);
+    if (d + c.pen < bs) { bs = d + c.pen; best = c; bd = d; }
+  }
+  const items = best.ids.map((id, i) => ({ paint: PAINTS[id], parts: best.parts[i] })).sort((a, b) => b.parts - a.parts);
+  return { items, rgb: best.lin.map(l2s), dE: bd };
+}
+
+/* ---------- naming a colour in plain words ---------- */
+function nameOf(L, a, b) {
+  const C = Math.hypot(a, b); let h = Math.atan2(b, a) * 180 / Math.PI; if (h < 0) h += 360;
+  if (C < 9) return L > 88 ? 'Off-white' : L > 62 ? 'Light grey' : L > 38 ? 'Mid grey' : L > 18 ? 'Dark grey' : 'Near black';
+  let hue = h < 20 || h >= 335 ? 'pink' : h < 50 ? 'red' : h < 75 ? 'orange' : h < 105 ? 'yellow' : h < 165 ? 'green' : h < 220 ? 'teal' : h < 290 ? 'blue' : 'purple';
+  if ((hue === 'orange' || hue === 'red' || hue === 'yellow') && L < 52 && C < 48) hue = 'brown';
+  else if (hue === 'yellow' && L < 78 && C < 62) hue = 'ochre';
+  return (L > 72 ? 'Light ' : L < 38 ? 'Dark ' : 'Mid ') + hue;
+}
+
+function modeFilter(lab, w, h, k, rad) {
+  const out = new Uint8Array(lab.length), cnt = new Uint16Array(k);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    cnt.fill(0);
+    for (let dy = -rad; dy <= rad; dy++) { const yy = y + dy; if (yy < 0 || yy >= h) continue;
+      for (let dx = -rad; dx <= rad; dx++) { const xx = x + dx; if (xx < 0 || xx >= w) continue; cnt[lab[yy * w + xx]]++; } }
+    let best = lab[y * w + x], bc = cnt[best];
+    for (let j = 0; j < k; j++) if (cnt[j] > bc) { bc = cnt[j]; best = j; }
+    out[y * w + x] = best;
+  }
+  return out;
+}
+function dropSpecks(lab, w, h, k, minSize) {
+  const n = w * h, seen = new Uint8Array(n), q = new Int32Array(n), cnt = new Uint32Array(k);
+  for (let s = 0; s < n; s++) {
+    if (seen[s]) continue;
+    const me = lab[s]; let head = 0, tail = 0; q[tail++] = s; seen[s] = 1; cnt.fill(0);
+    while (head < tail) {
+      const i = q[head++], x = i % w, y = (i - x) / w;
+      const nb = [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1];
+      for (const j of nb) { if (j < 0) continue; if (lab[j] === me) { if (!seen[j]) { seen[j] = 1; q[tail++] = j; } } else cnt[lab[j]]++; }
+    }
+    if (tail < minSize) {
+      let best = -1, bc = 0; for (let j = 0; j < k; j++) if (cnt[j] > bc) { bc = cnt[j]; best = j; }
+      if (best >= 0) for (let t = 0; t < tail; t++) lab[q[t]] = best;
+    }
+  }
+}
+/* ---------- photo to shapes ---------- */
+function prepare(src) {
+  const sw = src.naturalWidth || src.width, sh = src.naturalHeight || src.height;
+  const sc = 480 / Math.max(sw, sh), w = Math.max(8, Math.round(sw * sc)), h = Math.max(8, Math.round(sh * sc)), n = w * h;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(src, 0, 0, w, h);
+  const d = x.getImageData(0, 0, w, h).data;
+  const L = new Float32Array(n), A = new Float32Array(n), B = new Float32Array(n);
+  for (let y = 0; y < h; y++) for (let xx = 0; xx < w; xx++) {
+    let r = 0, g = 0, b = 0, m = 0;                       // 3x3 blur so texture does not become specks
+    for (let dy = -1; dy <= 1; dy++) { const yy = y + dy; if (yy < 0 || yy >= h) continue;
+      for (let dx = -1; dx <= 1; dx++) { const x2 = xx + dx; if (x2 < 0 || x2 >= w) continue; const o = (yy * w + x2) * 4; r += d[o]; g += d[o + 1]; b += d[o + 2]; m++; } }
+    const lab = lin2lab(s2l(r / m), s2l(g / m), s2l(b / m)), i = y * w + xx;
+    L[i] = lab[0]; A[i] = lab[1]; B[i] = lab[2];
+  }
+  const S = 2;
+  return { w, h, n, L, A, B, S, W: w * S, H: h * S, segs: {} };
+}
+function segment(P, k, detail) {
+  const { w, h, n, L, A, B, S, W, H } = P;
+  let seed = 12345; const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const cs = [], d2 = new Float32Array(n).fill(1e9);
+  let pick = Math.floor(rnd() * n); cs.push([L[pick], A[pick], B[pick]]);
+  while (cs.length < k) {                                  // spread the starting colors apart
+    const c = cs[cs.length - 1]; let sum = 0;
+    for (let i = 0; i < n; i++) { const dl = L[i] - c[0], da = A[i] - c[1], db = B[i] - c[2], d = dl * dl + da * da + db * db; if (d < d2[i]) d2[i] = d; sum += d2[i]; }
+    let t = rnd() * sum; pick = n - 1;
+    for (let i = 0; i < n; i++) { t -= d2[i]; if (t <= 0) { pick = i; break; } }
+    cs.push([L[pick], A[pick], B[pick]]);
+  }
+  let lab = new Uint8Array(n);
+  for (let it = 0; it < 12; it++) {
+    const sum = cs.map(() => [0, 0, 0, 0]);
+    const step = it < 11 ? 3 : 1;                          // quick passes on a sample, then one full pass
+    for (let i = 0; i < n; i += step) {
+      let best = 0, bd = 1e9;
+      for (let j = 0; j < k; j++) { const c = cs[j], dl = L[i] - c[0], da = A[i] - c[1], db = B[i] - c[2], d = dl * dl + da * da + db * db; if (d < bd) { bd = d; best = j; } }
+      lab[i] = best; const s = sum[best]; s[0] += L[i]; s[1] += A[i]; s[2] += B[i]; s[3]++;
+    }
+    for (let j = 0; j < k; j++) if (sum[j][3]) cs[j] = [sum[j][0] / sum[j][3], sum[j][1] / sum[j][3], sum[j][2] / sum[j][3]];
+  }
+  // Detail 1 smooths hard and merges small shapes; detail 5 keeps nearly everything.
+  const D = [null, [3, 2, 0.03], [2, 2, 0.015], [1, 1, 0.006], [0, 0, 0.003], [0, 0, 0.0015]][detail];
+  for (let t = 0; t < D[1]; t++) lab = modeFilter(lab, w, h, k, D[0]);
+  dropSpecks(lab, w, h, k, Math.max(4, n * D[2] / k));
+  const acc = []; for (let j = 0; j < k; j++) acc.push([0, 0, 0, 0, 0]);
+  for (let i = 0; i < n; i++) { const s = acc[lab[i]]; s[0] += L[i]; s[1] += A[i]; s[2] += B[i]; s[3]++; s[4] += (i / w) | 0; }
+  const remap = new Int8Array(k).fill(-1), used = {}; let clusters = [];
+  for (let j = 0; j < k; j++) {
+    const s = acc[j]; if (!s[3]) continue;
+    remap[j] = clusters.length;
+    const l = [s[0] / s[3], s[1] / s[3], s[2] / s[3]];
+    let name = nameOf(l[0], l[1], l[2]); used[name] = (used[name] || 0) + 1; if (used[name] > 1) name += ' ' + used[name];
+    clusters.push({ lab: l, rgb: lab2rgb(l[0], l[1], l[2]), area: s[3] / n, meanY: s[4] / s[3] / h, name, recipe: null });
+  }
+  for (let i = 0; i < n; i++) lab[i] = remap[lab[i]];
+  // Enlarge: each big pixel takes whichever of its four nearest shapes has the most pull, which rounds off the steps.
+  const big = new Uint8Array(W * H);
+  for (let Y = 0; Y < H; Y++) {
+    let fy = (Y + 0.5) / S - 0.5; if (fy < 0) fy = 0; if (fy > h - 1) fy = h - 1;
+    const y0 = Math.min(h - 2, fy | 0), ty = fy - y0;
+    for (let X = 0; X < W; X++) {
+      let fx = (X + 0.5) / S - 0.5; if (fx < 0) fx = 0; if (fx > w - 1) fx = w - 1;
+      const x0 = Math.min(w - 2, fx | 0), tx = fx - x0, i = y0 * w + x0;
+      const w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty;
+      const a = lab[i], b = lab[i + 1], c = lab[i + w], d = lab[i + w + 1];
+      let best = a, bs = w00 + (b === a ? w10 : 0) + (c === a ? w01 : 0) + (d === a ? w11 : 0);
+      if (b !== a) { const sc = w10 + (c === b ? w01 : 0) + (d === b ? w11 : 0); if (sc > bs) { bs = sc; best = b; } }
+      if (c !== a && c !== b) { const sc = w01 + (d === c ? w11 : 0); if (sc > bs) { bs = sc; best = c; } }
+      if (d !== a && d !== b && d !== c && w11 > bs) best = d;
+      big[Y * W + X] = best;
+    }
+  }
+  const cnt = new Float64Array(clusters.length), sy = new Float64Array(clusters.length), map2 = new Int16Array(clusters.length).fill(-1), keep = [];
+  for (let i = 0, N = W * H; i < N; i++) { cnt[big[i]]++; sy[big[i]] += (i / W) | 0; }
+  clusters.forEach((c, j) => { if (cnt[j]) { map2[j] = keep.length; c.area = cnt[j] / (W * H); c.meanY = sy[j] / cnt[j] / H; keep.push(c); } });
+  if (keep.length < clusters.length) for (let i = 0, N = W * H; i < N; i++) big[i] = map2[big[i]];
+  clusters = keep;
+  // Paint order: furthest back and largest first. The numbers follow this order.
+  const order = clusters.map((c, j) => j).sort((p, q) => (clusters[p].meanY - 0.35 * clusters[p].area) - (clusters[q].meanY - 0.35 * clusters[q].area));
+  const rank = []; order.forEach((j, i) => { rank[j] = i; });
+  return { big, clusters, order, rank, spots: null };
+}
+
+// Distance from each pixel to the nearest edge of its shape (0 on the edge itself).
+function edgeDistance(big, W, H, dist) {
+  const N = W * H;
+  for (let i = 0; i < N; i++) {
+    const x = i % W, y = (i - x) / W, j = big[i];
+    dist[i] = x === 0 || y === 0 || x === W - 1 || y === H - 1 || big[i - 1] !== j || big[i + 1] !== j || big[i - W] !== j || big[i + W] !== j ? 0 : 60000;
+  }
+  for (let i = W + 1; i < N; i++) { const v = Math.min(dist[i - 1], dist[i - W]) + 1; if (v < dist[i]) dist[i] = v; }
+  for (let i = N - W - 2; i >= 0; i--) { const v = Math.min(dist[i + 1], dist[i + W]) + 1; if (v < dist[i]) dist[i] = v; }
+}
+function mergeSmall(big, W, H, m, minR) {
+  const N = W * H, dist = new Uint16Array(N), seen = new Uint8Array(N), q = new Int32Array(N), cnt = new Uint32Array(m);
+  for (let pass = 0; pass < 8; pass++) {
+    edgeDistance(big, W, H, dist); seen.fill(0); let changed = 0;
+    for (let st = 0; st < N; st++) {
+      if (seen[st]) continue;
+      const j = big[st]; let head = 0, tail = 0, best = 0; q[tail++] = st; seen[st] = 1; cnt.fill(0);
+      while (head < tail) {
+        const i = q[head++], x = i % W;
+        if (dist[i] > best) best = dist[i];
+        if (x > 0) { if (big[i - 1] !== j) cnt[big[i - 1]]++; else if (!seen[i - 1]) { seen[i - 1] = 1; q[tail++] = i - 1; } }
+        if (x < W - 1) { if (big[i + 1] !== j) cnt[big[i + 1]]++; else if (!seen[i + 1]) { seen[i + 1] = 1; q[tail++] = i + 1; } }
+        if (i >= W) { if (big[i - W] !== j) cnt[big[i - W]]++; else if (!seen[i - W]) { seen[i - W] = 1; q[tail++] = i - W; } }
+        if (i + W < N) { if (big[i + W] !== j) cnt[big[i + W]]++; else if (!seen[i + W]) { seen[i + W] = 1; q[tail++] = i + W; } }
+      }
+      if (best >= minR) continue;
+      let to = -1, bc = 0; for (let t = 0; t < m; t++) if (cnt[t] > bc) { bc = cnt[t]; to = t; }
+      if (to >= 0) { for (let t = 0; t < tail; t++) big[q[t]] = to; changed++; }
+    }
+    if (!changed) break;
+  }
+}
+
+/* ---------- numbers, drawing and the printable sheet ---------- */
+// One number per connected area, placed at the point furthest from that area's edges.
+function numberSpots(s, W, H) {
+  if (s.spots) return s.spots;
+  const big = s.big, N = W * H, dist = new Uint16Array(N);
+  edgeDistance(big, W, H, dist);
+  const seen = new Uint8Array(N), q = new Int32Array(N), spots = [];
+  for (let st = 0; st < N; st++) {
+    if (seen[st]) continue;
+    const j = big[st]; let head = 0, tail = 0, best = st; q[tail++] = st; seen[st] = 1;
+    while (head < tail) {
+      const i = q[head++], x = i % W;
+      if (dist[i] > dist[best]) best = i;
+      if (x > 0 && !seen[i - 1] && big[i - 1] === j) { seen[i - 1] = 1; q[tail++] = i - 1; }
+      if (x < W - 1 && !seen[i + 1] && big[i + 1] === j) { seen[i + 1] = 1; q[tail++] = i + 1; }
+      if (i >= W && !seen[i - W] && big[i - W] === j) { seen[i - W] = 1; q[tail++] = i - W; }
+      if (i + W < N && !seen[i + W] && big[i + W] === j) { seen[i + W] = 1; q[tail++] = i + W; }
+    }
+    if (dist[best] >= 2) spots.push({ x: best % W, y: (best / W) | 0, r: dist[best], j });
+  }
+  return (s.spots = spots);
+}
+function drawNumbers(x, s, spots, z, ox, oy, show) {
+  x.fillStyle = '#2A2F3A'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  for (const sp of spots) {
+    if (sp.r < 5 || (show && !show(sp.j))) continue;        // too small to print legibly; the zoomable view still numbers these
+    x.font = '600 ' + Math.round(Math.min(30, Math.max(11, sp.r * 1.25)) * z) + "px Recursive, 'Segoe UI', sans-serif";
+    x.fillText(String(s.rank[sp.j] + 1), ox + sp.x * z, oy + sp.y * z + z);
+  }
+  x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+}
+const WHITE = [255, 255, 255], LINE = [70, 76, 88], INK = [34, 38, 48];
+// fill(j, cluster) returns a color for a shape, or null to leave it as blank paper.
+function renderTo(cv, P, s, fill, numbers, noInk) {
+  if (cv.width !== P.W || cv.height !== P.H) { cv.width = P.W; cv.height = P.H; }
+  const x = cv.getContext('2d'), big = s.big, W = P.W, H = P.H, N = W * H, img = x.createImageData(W, H), d = img.data;
+  const cols = s.clusters.map((c, j) => fill(j, c));
+  for (let i = 0; i < N; i++) {
+    const j = big[i], xx = i % W; let c = cols[j];
+    const e1 = (xx + 1 < W && big[i + 1] !== j) || (i + W < N && big[i + W] !== j);
+    if (c) { if (e1 && !noInk) c = INK; }
+    else c = e1 || (xx + 2 < W && big[i + 2] !== j) || (i + 2 * W < N && big[i + 2 * W] !== j) ? LINE : WHITE;
+    const o = i * 4; d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+  }
+  x.putImageData(img, 0, 0);
+  if (numbers) drawNumbers(x, s, numberSpots(s, W, H), 1, 0, 0, j => !cols[j]);
+}
+// Line work at three times the size, with lines `t` thirds of a pixel thick. Thin lines sit on one side of each
+// boundary, so a narrow shape keeps a visible white inside instead of being swallowed by its own outline.
+function renderFine(cv, P, s, fill, t) {
+  const Z = 3, W = P.W, H = P.H, big = s.big, OW = W * Z, OH = H * Z, from = Z - t;
+  if (cv.width !== OW || cv.height !== OH) { cv.width = OW; cv.height = OH; }
+  const x = cv.getContext('2d'), img = x.createImageData(OW, OH), px = new Uint32Array(img.data.buffer);
+  const pack = c => (255 << 24 | c[2] << 16 | c[1] << 8 | c[0]) >>> 0, line = pack(LINE);
+  const cols = s.clusters.map((c, j) => pack(fill(j, c) || WHITE));
+  for (let y = 0; y < H; y++) for (let xx = 0; xx < W; xx++) {
+    const i = y * W + xx, j = big[i], c = cols[j];
+    const r = xx + 1 < W && big[i + 1] !== j, b = y + 1 < H && big[i + W] !== j, d = xx + 1 < W && y + 1 < H && big[i + W + 1] !== j;
+    for (let uy = 0; uy < Z; uy++) {
+      const o = (y * Z + uy) * OW + xx * Z, low = uy >= from;
+      for (let ux = 0; ux < Z; ux++) { const right = ux >= from; px[o + ux] = (right && r) || (low && b) || (right && low && d) ? line : c; }
+    }
+  }
+  x.putImageData(img, 0, 0);
+}
+// The colored view keeps every shape exactly as in the line art and only blends the one-pixel edge so it is not stair-stepped.
+function renderSoft(cv, P, s) {
+  const W = P.W, H = P.H, N = W * H, lab = s.big, cols = s.clusters.map(c => c.rgb);
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const x = cv.getContext('2d'), img = x.createImageData(W, H), d = img.data;
+  for (let y = 0; y < H; y++) for (let xx = 0; xx < W; xx++) {
+    const i = y * W + xx, j = lab[i], o = i * 4; let r, g, b;
+    const flat = (xx === 0 || lab[i - 1] === j) && (xx === W - 1 || lab[i + 1] === j) && (y === 0 || lab[i - W] === j) && (y === H - 1 || lab[i + W] === j);
+    if (flat) { const c = cols[j]; r = c[0]; g = c[1]; b = c[2]; }
+    else {                                                     // on an edge: blend the neighbors so it is not stair-stepped
+      r = g = b = 0; let n = 0;
+      for (let dy = -1; dy <= 1; dy++) { const yy = y + dy; if (yy < 0 || yy >= H) continue;
+        for (let dx = -1; dx <= 1; dx++) { const x2 = xx + dx; if (x2 < 0 || x2 >= W) continue; const c = cols[lab[yy * W + x2]], wt = dx || dy ? 1 : 2; r += c[0] * wt; g += c[1] * wt; b += c[2] * wt; n += wt; } }
+      r /= n; g /= n; b /= n;
+    }
+    d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = 255;
+  }
+  x.putImageData(img, 0, 0);
+}
+const partsText = p => p === 0.5 ? 'A touch' : p === 1 ? '1 part' : p + ' parts';
+const recipeOf = c => c.recipe || (c.recipe = bestRecipe(c.lab));
+function buildSheet(P, s, title) {
+  const W = P.W, H = P.H, Z = 2, M = 80, IW = W * Z, IH = H * Z;
+  const rows = Math.ceil(s.order.length / 2), rowH = 84, headH = 170;
+  const c = document.createElement('canvas'); c.width = IW + 2 * M; c.height = headH + IH + 60 + rows * rowH + M;
+  const x = c.getContext('2d'); x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, c.width, c.height);
+  x.fillStyle = '#1B2230'; x.font = "700 60px Recursive, 'Segoe UI', sans-serif"; x.fillText(title || 'Paint by number', M, 96, IW);
+  x.fillStyle = '#5A606C'; x.font = "28px Recursive, 'Segoe UI', sans-serif";
+  x.fillText(s.order.length + ' colors. Paint in number order, 1 first. Recipes are starting points: test a swatch.', M, 140, IW);
+  const t = document.createElement('canvas');
+  renderFine(t, P, s, () => null, 2);
+  x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high'; x.drawImage(t, M, headH, IW, IH);
+  x.strokeStyle = '#464C58'; x.lineWidth = 3; x.strokeRect(M, headH, IW, IH);
+  drawNumbers(x, s, numberSpots(s, W, H), Z, M, headH, null);
+  s.order.forEach((j, idx) => {
+    const c2 = s.clusters[j], r = recipeOf(c2), lx = M + (idx < rows ? 0 : IW / 2), ly = headH + IH + 60 + (idx % rows) * rowH;
+    x.strokeStyle = '#464C58'; x.lineWidth = 2; x.beginPath(); x.arc(lx + 28, ly + 30, 26, 0, Math.PI * 2); x.stroke();
+    x.fillStyle = '#1B2230'; x.font = "700 28px Recursive, 'Segoe UI', sans-serif"; x.textAlign = 'center'; x.fillText(String(idx + 1), lx + 28, ly + 40); x.textAlign = 'left';
+    x.fillStyle = css(c2.rgb); x.fillRect(lx + 72, ly + 4, 52, 52); x.strokeRect(lx + 72, ly + 4, 52, 52);
+    x.fillStyle = '#1B2230'; x.font = "600 28px Recursive, 'Segoe UI', sans-serif"; x.fillText(c2.name, lx + 144, ly + 26);
+    const txt = r.items.map(it => partsText(it.parts).toLowerCase() + ' ' + it.paint.n.toLowerCase()).join(', ');
+    x.fillStyle = '#5A606C'; x.font = "24px Recursive, 'Segoe UI', sans-serif"; x.fillText(txt.charAt(0).toUpperCase() + txt.slice(1), lx + 144, ly + 58, IW / 2 - 164);
+  });
+  return c;
+}
+
+/* ---------- sample photos, painted in code ---------- */
+function grad(x, y0, y1, stops) { const g = x.createLinearGradient(0, y0, 0, y1); stops.forEach((s, i) => g.addColorStop(i / (stops.length - 1), s)); return g; }
+function poly(x, pts, fill) { x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.closePath(); x.fillStyle = fill; x.fill(); }
+function disc(x, cx, cy, rx, ry, fill) { x.beginPath(); x.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); x.fillStyle = fill; x.fill(); }
+const SAMPLES = [
+  { name: 'Hills', draw(x, w, h) {
+    x.fillStyle = grad(x, 0, h * 0.6, ['#86B0DB', '#DDE9F1']); x.fillRect(0, 0, w, h);
+    disc(x, w * 0.72, h * 0.16, 70, 18, 'rgba(255,255,255,.75)'); disc(x, w * 0.3, h * 0.24, 54, 13, 'rgba(255,255,255,.6)');
+    poly(x, [[0, h * 0.42], [w * 0.18, h * 0.31], [w * 0.36, h * 0.39], [w * 0.57, h * 0.27], [w * 0.78, h * 0.38], [w, h * 0.3], [w, h * 0.66], [0, h * 0.66]], '#6C8DB4');
+    poly(x, [[0, h * 0.56], [w * 0.24, h * 0.46], [w * 0.5, h * 0.54], [w * 0.74, h * 0.44], [w, h * 0.52], [w, h * 0.78], [0, h * 0.78]], '#4B7A62');
+    poly(x, [[0, h * 0.69], [w, h * 0.64], [w, h * 0.9], [0, h * 0.93]], grad(x, h * 0.64, h * 0.93, ['#DDBA50', '#C39632']));
+    disc(x, w * 0.18, h * 0.69, 44, 46, '#28443C'); disc(x, w * 0.28, h * 0.76, 32, 34, '#28443C');
+    poly(x, [[0, h * 0.87], [w * 0.35, h * 0.82], [w * 0.68, h * 0.88], [w, h * 0.83], [w, h], [0, h]], '#28443C');
+  } },
+  { name: 'Still life', draw(x, w, h) {
+    x.fillStyle = grad(x, 0, h * 0.62, ['#A4B6B1', '#7C9590']); x.fillRect(0, 0, w, h);
+    x.fillStyle = grad(x, h * 0.62, h, ['#8E5C37', '#673F23']); x.fillRect(0, h * 0.62, w, h * 0.38);
+    disc(x, w * 0.52, h * 0.8, 170, 22, 'rgba(40,24,14,.4)');
+    disc(x, w * 0.5, h * 0.56, 150, 26, '#D6CDBA');
+    [[0.38, 0.5], [0.52, 0.46], [0.63, 0.51]].forEach(p => { const g = x.createRadialGradient(w * p[0] - 14, h * p[1] - 16, 6, w * p[0], h * p[1], 52); g.addColorStop(0, '#F8AE45'); g.addColorStop(1, '#D4681A'); disc(x, w * p[0], h * p[1], 50, 50, g); });
+    x.beginPath(); x.ellipse(w * 0.5, h * 0.56, 150, 100, 0, 0, Math.PI); x.fillStyle = grad(x, h * 0.56, h * 0.84, ['#F1EBDD', '#CFC5B0']); x.fill();
+  } },
+  { name: 'Coast at dusk', draw(x, w, h) {
+    x.fillStyle = grad(x, 0, h * 0.56, ['#39386C', '#8C4F7E', '#D3606A', '#F5AC58']); x.fillRect(0, 0, w, h);
+    disc(x, w * 0.36, h * 0.47, 30, 30, '#FDE7A8');
+    x.fillStyle = grad(x, h * 0.56, h, ['#2E4F82', '#152548']); x.fillRect(0, h * 0.56, w, h * 0.44);
+    poly(x, [[w * 0.33, h * 0.56], [w * 0.39, h * 0.56], [w * 0.43, h * 0.86], [w * 0.29, h * 0.86]], 'rgba(244,172,110,.6)');
+    poly(x, [[w * 0.56, h * 0.56], [w * 0.7, h * 0.4], [w * 0.86, h * 0.34], [w, h * 0.3], [w, h * 0.62], [w * 0.62, h * 0.6]], '#1A1A2A');
+    poly(x, [[0, h * 0.88], [w * 0.5, h * 0.84], [w, h * 0.9], [w, h], [0, h]], '#3B2F3C');
+  } }
+];
+function makeSample(s) {
+  const c = document.createElement('canvas'); c.width = 960; c.height = 720;
+  const x = c.getContext('2d'); x.scale(2, 2); s.draw(x, 480, 360); x.setTransform(1, 0, 0, 1, 0, 0);
+  const im = x.getImageData(0, 0, 960, 720), d = im.data;       // a little grain, like a real photo
+  let seed = 7; const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  for (let i = 0; i < d.length; i += 4) { const g = (rnd() - 0.5) * 20; d[i] += g; d[i + 1] += g; d[i + 2] += g; }
+  x.putImageData(im, 0, 0); return c;
+}
+
+/* ---------- app ---------- */
+const $ = id => document.getElementById(id);
+const KEY = 'blockin.artworks.v1';
+// Typical paint-by-number kits run from about 24 colors for beginners to 36 and then 48 or more for advanced painters.
+const LEVELS = {
+  beginner: { name: 'Beginner', min: 12, max: 24, k: 18, detail: 2, desc: 'Fewer colors and larger shapes. A relaxed first painting.' },
+  intermediate: { name: 'Intermediate', min: 24, max: 36, k: 30, detail: 3, desc: 'More colors and smaller shapes. Takes some patience.' },
+  advanced: { name: 'Advanced', min: 36, max: 48, k: 42, detail: 4, desc: 'The most colors and fine detail. Closest to the photo.' }
+};
+const DETAIL = ['', 'Very simple', 'Simple', 'Balanced', 'Detailed', 'Very detailed'];
+const dOf = a => a.detail || (a.fine ? 5 : 1);
+let arts = [], storeOk = true, saver = null, sheetUrl = null;
+const ui = { screen: 'dash', tab: 'outline', adding: false, cfg: null, art: null, P: null, open: -1, delArm: false, sort: 'num' };
+const pcache = new Map();
+
+function persist() { try { localStorage.setItem(KEY, JSON.stringify(arts)); storeOk = true; } catch (e) { storeOk = false; } return storeOk; }
+function loadImg(url) { return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = url; }); }
+async function getP(photo) {
+  if (pcache.has(photo)) return pcache.get(photo);
+  const im = await loadImg(photo), P = prepare(im);
+  P.orig = im; pcache.set(photo, P); return P;
+}
+const segOf = (P, k, detail) => { const key = k + 'd' + detail; return P.segs[key] || (P.segs[key] = segment(P, k, detail)); };
+// Every photo is stored as one JPEG and always processed from that copy, so the shapes come out the same each time.
+function toPhoto(src) {
+  const sw = src.naturalWidth || src.width, sh = src.naturalHeight || src.height, sc = Math.min(1, 960 / Math.max(sw, sh));
+  const c = document.createElement('canvas'); c.width = Math.max(8, Math.round(sw * sc)); c.height = Math.max(8, Math.round(sh * sc));
+  const x = c.getContext('2d'); x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, c.width, c.height); x.drawImage(src, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.85);
+}
+function makeThumb(P, s, done) {
+  const t = document.createElement('canvas'); renderTo(t, P, s, (j, c) => done.indexOf(s.rank[j]) >= 0 ? c.rgb : null, false);
+  const c = document.createElement('canvas'); c.width = 320; c.height = Math.round(320 * P.H / P.W);
+  c.getContext('2d').drawImage(t, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.8);
+}
+const levelName = a => LEVELS[a.level] ? LEVELS[a.level].name : 'Custom';
+const coverText = r => r < 0.01 ? 'Under 1% of the picture' : Math.round(r * 100) + '% of the picture';
+const pct = a => a.n ? Math.round(100 * a.done.length / a.n) : 0;
+
+function show(screen) {
+  ui.screen = screen;
+  ['dash', 'config', 'final'].forEach(n => { $('s-' + n).hidden = n !== screen; });
+  window.scrollTo(0, 0);
+}
+
+/* dashboard */
+function renderDash() {
+  $('tab-outline').setAttribute('aria-selected', String(ui.tab === 'outline'));
+  $('tab-refs').setAttribute('aria-selected', String(ui.tab === 'refs'));
+  $('addmenu').hidden = !ui.adding; $('add').setAttribute('aria-expanded', String(ui.adding));
+  const grid = $('grid'); grid.textContent = '';
+  const note = !arts.length ? (ui.tab === 'outline' ? 'No artworks yet. Tap the plus button to add a photo.' : 'No photos yet. Tap the plus button to add one.')
+    : ui.tab === 'refs' ? 'Your original photos. Tap one to start another artwork from it.'
+    : storeOk ? '' : 'This browser is not saving right now, so progress will be lost when you close the page.';
+  $('dashnote').textContent = note; $('dashnote').hidden = !note;
+  arts.forEach(a => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'art';
+    const th = document.createElement('span'); th.className = 'thumb';
+    const im = document.createElement('img'); im.alt = ''; im.src = ui.tab === 'outline' ? a.thumb : a.photo; th.append(im);
+    const meta = document.createElement('span'); meta.className = 'meta';
+    const t = document.createElement('span'); t.className = 't'; t.textContent = a.title; meta.append(t);
+    if (ui.tab === 'outline') {
+      const bar = document.createElement('span'); bar.className = 'bar'; const fill = document.createElement('i'); fill.style.width = pct(a) + '%'; bar.append(fill); th.append(bar);
+      const p = document.createElement('span'); p.className = 'p'; p.textContent = pct(a) + '%'; meta.append(p);
+      const sub = document.createElement('span'); sub.className = 'sub'; sub.textContent = a.done.length + ' of ' + a.n + ' colors · ' + levelName(a); meta.append(sub);
+      b.setAttribute('aria-label', a.title + ', ' + pct(a) + '% painted');
+      b.addEventListener('click', () => { if (a.draft) { delete a.draft; persist(); } openArt(a); });
+    } else {
+      b.setAttribute('aria-label', 'Start a new artwork from ' + a.title);
+      b.addEventListener('click', () => startConfig(a.photo, a.title.replace(/ \(sample\)$/, '') + ' copy'));
+    }
+    b.append(th, meta); grid.append(b);
+  });
+}
+$('tab-outline').addEventListener('click', () => { ui.tab = 'outline'; renderDash(); });
+$('tab-refs').addEventListener('click', () => { ui.tab = 'refs'; renderDash(); });
+$('add').addEventListener('click', () => { ui.adding = !ui.adding; renderDash(); });
+document.addEventListener('click', e => { if (ui.adding && !e.target.closest('.addwrap')) { ui.adding = false; renderDash(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.adding) { ui.adding = false; renderDash(); $('add').focus(); } });
+document.addEventListener('click', e => { const n = e.target.closest('[data-nav]'); if (n) { ui.adding = false; renderDash(); show(n.dataset.nav); } });
+
+/* adding a photo */
+function viaData(f) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => loadImg(r.result).then(res, rej); r.onerror = rej; r.readAsDataURL(f); }); }
+async function openFile(f) {
+  if (!f) return;
+  $('fileerr').hidden = true; $('pickstatus').hidden = true;
+  let src = null, url = null;
+  try { if (window.createImageBitmap) src = await createImageBitmap(f, { imageOrientation: 'from-image' }); } catch (e) {}
+  if (!src) try { src = await viaData(f); } catch (e) {}
+  if (!src) try { url = URL.createObjectURL(f); src = await loadImg(url); } catch (e) {}
+  try { if (!src) throw 0; await startConfig(toPhoto(src), 'Untitled ' + (arts.filter(a => !a.sample).length + 1)); }
+  catch (e) { $('fileerr').hidden = false; }
+  if (url) URL.revokeObjectURL(url);
+  if (src && src.close) src.close();
+}
+function pickFile(e) { const f = e.target.files && e.target.files[0]; openFile(f).then(() => { e.target.value = ''; }); }
+['file', 'cam'].forEach(id => {
+  $(id).addEventListener('change', pickFile);
+  $(id).addEventListener('click', () => { $('pickstatus').hidden = false; });
+});
+const imageIn = list => Array.from(list || []).find(f => f && /^image\//.test(f.type));
+function clipImage(dt) {
+  if (!dt) return null;
+  const f = imageIn(dt.files); if (f) return f;
+  for (const it of Array.from(dt.items || [])) if (it.kind === 'file' && /^image\//.test(it.type)) return it.getAsFile();
+  return null;
+}
+const pb = $('pastebox');
+pb.addEventListener('beforeinput', e => { if ((e.inputType || '').indexOf('insertFromPaste') !== 0) e.preventDefault(); });
+document.addEventListener('paste', e => {
+  if (ui.screen !== 'dash') return;
+  const f = clipImage(e.clipboardData);
+  if (f) { e.preventDefault(); openFile(f); return; }
+  if (!pb.contains(e.target)) return;
+  setTimeout(() => {                                         // some phones insert the picture instead of handing over a file
+    const im = pb.querySelector('img'), src = im && im.src;
+    pb.textContent = '';
+    if (!src) { $('fileerr').hidden = false; return; }
+    $('fileerr').hidden = true;
+    loadImg(src).then(i2 => startConfig(toPhoto(i2), 'Untitled ' + (arts.filter(a => !a.sample).length + 1))).catch(() => { $('fileerr').hidden = false; });
+  }, 60);
+});
+document.addEventListener('dragover', e => { e.preventDefault(); });
+document.addEventListener('drop', e => { e.preventDefault(); if (ui.screen !== 'dash') return; const f = imageIn(e.dataTransfer && e.dataTransfer.files); if (f) openFile(f); });
+
+/* configure */
+$('levels').innerHTML = Object.keys(LEVELS).map(id => { const l = LEVELS[id]; return '<div class="lvl" data-lvl="' + id + '">' +
+  '<button type="button" class="lvlhead" data-pick="' + id + '" aria-pressed="false" aria-controls="body-' + id + '"><span class="dot" aria-hidden="true"></span><span class="lvlname">' + l.name + '</span><span class="lvlmeta" id="meta-' + id + '"></span><span class="lvldesc">' + l.desc + '</span></button>' +
+  '<div class="lvlbody" id="body-' + id + '" hidden>' +
+  '<div class="sliderhead"><label for="k-' + id + '">Colors</label><span class="val" id="kv-' + id + '"></span></div>' +
+  '<input type="range" id="k-' + id + '" data-k="' + id + '" min="' + l.min + '" max="' + l.max + '" step="1" value="' + l.k + '">' +
+  '<div class="ticks" aria-hidden="true"><span>' + l.min + '</span><span>' + l.max + '</span></div>' +
+  '<div class="sliderhead"><label for="d-' + id + '">Detail</label><span class="val" id="dv-' + id + '"></span></div>' +
+  '<input type="range" id="d-' + id + '" data-d="' + id + '" min="1" max="5" step="1" value="' + l.detail + '">' +
+  '<div class="ticks" aria-hidden="true"><span>Simpler shapes</span><span>Finer shapes</span></div>' +
+  '</div></div>'; }).join('');
+// Pass `art` to reopen an unsaved artwork with its own settings, so its line art can still be changed.
+async function startConfig(photo, title, art) {
+  const P = await getP(photo), set = {};
+  Object.keys(LEVELS).forEach(id => { set[id] = { k: LEVELS[id].k, detail: LEVELS[id].detail }; });
+  let level = 'beginner';
+  if (art && LEVELS[art.level]) { level = art.level; set[level] = { k: Math.min(LEVELS[level].max, Math.max(LEVELS[level].min, art.k)), detail: dOf(art) }; }
+  ui.cfg = { photo, P, title, level, set, view: 'color', edit: art || null };
+  ui.adding = false; show('config'); renderConfig();
+}
+let cfgTimer = 0;
+function renderConfig() {
+  const c = ui.cfg, cur = c.set[c.level];
+  $('v-color').setAttribute('aria-pressed', String(c.view === 'color'));
+  $('v-line').setAttribute('aria-pressed', String(c.view === 'line'));
+  Object.keys(LEVELS).forEach(id => {
+    const on = id === c.level, v = c.set[id];
+    document.querySelector('[data-lvl="' + id + '"]').classList.toggle('on', on);
+    document.querySelector('[data-pick="' + id + '"]').setAttribute('aria-pressed', String(on));
+    $('body-' + id).hidden = !on;
+    $('k-' + id).value = v.k; $('d-' + id).value = v.detail;
+    $('kv-' + id).textContent = v.k; $('dv-' + id).textContent = DETAIL[v.detail];
+    $('meta-' + id).textContent = v.k + ' colors';
+  });
+  $('lvlnote').textContent = 'Updating preview…';
+  clearTimeout(cfgTimer);
+  cfgTimer = setTimeout(() => {                              // let the controls repaint before the heavy work
+    const s = segOf(c.P, cur.k, cur.detail), n = s.clusters.length;
+    if (c.view === 'color') renderSoft($('cfgview'), c.P, s); else renderTo($('cfgview'), c.P, s, () => null, true, true);
+    $('lvlnote').textContent = n < cur.k ? 'This photo came out at ' + n + ' colors after similar areas merged.' : '';
+  }, 40);
+}
+$('v-color').addEventListener('click', () => { ui.cfg.view = 'color'; renderConfig(); });
+$('v-line').addEventListener('click', () => { ui.cfg.view = 'line'; renderConfig(); });
+$('levels').addEventListener('click', e => { const b = e.target.closest('[data-pick]'); if (b) { ui.cfg.level = b.dataset.pick; renderConfig(); } });
+$('levels').addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.k) ui.cfg.set[t.dataset.k].k = +t.value; else if (t.dataset.d) ui.cfg.set[t.dataset.d].detail = +t.value; else return;
+  renderConfig();
+});
+$('next').addEventListener('click', () => {
+  const c = ui.cfg, cur = c.set[c.level], s = segOf(c.P, cur.k, cur.detail);
+  let a = c.edit;
+  if (a) {                                                   // still a draft: apply the new settings to the same artwork
+    if (a.k !== cur.k || dOf(a) !== cur.detail) a.done = [];  // the shapes changed, so earlier ticks no longer line up
+    a.k = cur.k; a.detail = cur.detail; a.level = c.level; a.n = s.clusters.length; a.thumb = makeThumb(c.P, s, a.done);
+  } else {
+    a = { id: 'a' + Date.now().toString(36), title: c.title, photo: c.photo, k: cur.k, detail: cur.detail, level: c.level, done: [], n: s.clusters.length, thumb: makeThumb(c.P, s, []), draft: true };
+    arts.unshift(a);
+  }
+  persist(); openArt(a);
+});
+
+/* the numbered artwork */
+async function openArt(a) {
+  ui.P = await getP(a.photo); ui.art = a; ui.open = -1; ui.finView = 'line'; ui.delArm = false; zoom.s = 1; zoom.x = 0; zoom.y = 0;
+  const n0 = segOf(ui.P, a.k, dOf(a)).clusters.length; a.done = a.done.filter(i => i < n0); a.n = n0;
+  $('finmsg').hidden = true; $('sheetimg').hidden = true;
+  $('zwrap').style.setProperty('--ar', (ui.P.W / ui.P.H).toFixed(4));
+  show('final'); renderFinal();
+}
+const curSeg = () => segOf(ui.P, ui.art.k, dOf(ui.art));
+function recipeHtml(c) {
+  const r = recipeOf(c), total = r.items.reduce((t, it) => t + it.parts, 0);
+  return '<ul class="mix">' + r.items.map(it => { const sz = Math.round(12 + 26 * Math.sqrt(it.parts / total)); return '<li><span class="blobbox"><span class="blob" style="width:' + sz + 'px;height:' + sz + 'px;background:' + it.paint.h + '"></span></span><span class="name">' + it.paint.n + '</span><span class="parts">' + partsText(it.parts) + '</span></li>'; }).join('') + '</ul>';
+}
+// The picture is only redrawn when something visible changed. Lines get thinner as you zoom in.
+let paintKey = '', zTimer = 0;
+const lineT = () => zoom.s < 1.6 ? 3 : zoom.s < 3.2 ? 2 : 1;
+function paintFinal() {
+  const a = ui.art, s = curSeg(), colored = ui.finView === 'color', t = lineT();
+  const key = [a.id, a.k, dOf(a), ui.finView, colored ? 0 : t, a.done.join('.')].join('|');
+  if (key === paintKey) return; paintKey = key;
+  if (colored) renderSoft($('finview'), ui.P, s); else renderFine($('finview'), ui.P, s, (j, c) => a.done.indexOf(s.rank[j]) >= 0 ? c.rgb : null, t);
+}
+function renderFinal() {
+  const a = ui.art, s = curSeg(), n = s.clusters.length;
+  if (document.activeElement !== $('title')) $('title').value = a.title;
+  const fv = $('finview'), isDone = j => a.done.indexOf(s.rank[j]) >= 0, colored = ui.finView === 'color';
+  $('f-line').setAttribute('aria-pressed', String(!colored)); $('f-color').setAttribute('aria-pressed', String(colored));
+  fv.setAttribute('aria-label', colored ? 'Your artwork with every color filled in.' : 'Numbered line work. Colors you have ticked are filled in.');
+  paintFinal();
+  // Numbers are drawn as scalable text over the picture, so even tiny ones stay sharp when zoomed in.
+  const sv = $('nums'); sv.setAttribute('viewBox', '0 0 ' + ui.P.W + ' ' + ui.P.H);
+  sv.innerHTML = colored ? '' : numberSpots(s, ui.P.W, ui.P.H).filter(sp => !isDone(sp.j)).map(sp => {
+    const f = Math.min(30, Math.max(2.4, sp.r * 1.25));
+    return '<text x="' + sp.x + '" y="' + (sp.y + f * 0.36).toFixed(1) + '" font-size="' + f.toFixed(1) + '">' + (s.rank[sp.j] + 1) + '</text>';
+  }).join('');
+  applyZoom();
+  $('colcount').textContent = a.done.length + ' of ' + n + ' painted';
+  $('progfill').style.width = (n ? 100 * a.done.length / n : 0) + '%';
+  $('finback').textContent = a.draft ? '\u2190 Change difficulty' : '\u2190 Library';
+  $('save').hidden = !a.draft;                               // only a brand-new artwork offers Save
+  $('del').textContent = ui.delArm ? 'Tap again to delete for good' : 'Delete artwork';
+  const byAmt = ui.sort === 'amt', rows = s.order.map((j, i) => ({ j, i }));
+  if (byAmt) rows.sort((p, q) => s.clusters[q.j].area - s.clusters[p.j].area);
+  $('sort-num').setAttribute('aria-pressed', String(!byAmt)); $('sort-amt').setAttribute('aria-pressed', String(byAmt));
+  $('sortnote').textContent = byAmt ? 'Biggest areas first, so you know which colors to mix the most of. The numbers still match the canvas.'
+    : 'Each number matches the shapes marked with it on the canvas. Painting from 1 up works roughly from the background forward, so later colors sit on top.';
+  $('colors-list').innerHTML = rows.map(({ j, i }) => {
+    const c = s.clusters[j], done = a.done.indexOf(i) >= 0, open = ui.open === i;
+    return '<li class="' + (done ? 'done' : '') + '" id="row-' + i + '"><div class="rowhead">' +
+      '<button type="button" class="rowbtn" data-row="' + i + '" aria-expanded="' + open + '" aria-controls="rec-' + i + '">' +
+      '<span class="pot" style="background:' + css(c.rgb) + ';color:' + (c.lab[0] > 58 ? '#17181C' : '#FFFFFF') + '">' + (i + 1) + '</span><span class="nm"><span>' + c.name + '</span><span class="cov">' + coverText(c.area) + '</span></span>' +
+      '<svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>' +
+      '<label class="tick"><input type="checkbox" data-tick="' + i + '"' + (done ? ' checked' : '') + ' aria-label="Mark ' + c.name + ' as painted"></label></div>' +
+      '<div class="recipe" id="rec-' + i + '"' + (open ? '' : ' hidden') + '>' + (open ? recipeHtml(c) : '') + '</div></li>';
+  }).join('');
+}
+function saveArt(withThumb) {
+  const a = ui.art, s = curSeg(); a.n = s.clusters.length;
+  if (withThumb) a.thumb = makeThumb(ui.P, s, a.done);
+  return persist();
+}
+$('colors-list').addEventListener('click', e => {
+  const r = e.target.closest('[data-row]'); if (!r) return;
+  const i = +r.dataset.row; ui.open = ui.open === i ? -1 : i; renderFinal();
+  const f = document.querySelector('[data-row="' + i + '"]'); if (f) f.focus();
+});
+$('colors-list').addEventListener('change', e => {
+  const t = e.target.closest('[data-tick]'); if (!t) return;
+  const i = +t.dataset.tick, a = ui.art, at = a.done.indexOf(i);
+  if (at >= 0) a.done.splice(at, 1); else a.done.push(i);
+  delete a.draft;                                            // painting has started, so the line art is now set
+  saveArt(true); renderFinal();
+  const f = document.querySelector('[data-tick="' + i + '"]'); if (f) f.focus();
+});
+$('sort-num').addEventListener('click', () => { ui.sort = 'num'; renderFinal(); });
+$('sort-amt').addEventListener('click', () => { ui.sort = 'amt'; renderFinal(); });
+$('f-line').addEventListener('click', () => { ui.finView = 'line'; renderFinal(); });
+$('f-color').addEventListener('click', () => { ui.finView = 'color'; renderFinal(); });
+/* zoom and pan on the artwork */
+const zoom = { s: 1, x: 0, y: 0 }, pts = new Map();
+let dragDist = 0, pinchD = 0, pinchS = 1;
+function applyZoom() {
+  const cv = $('zlayer'), w = cv.clientWidth, h = cv.clientHeight;
+  zoom.s = Math.min(10, Math.max(1, zoom.s));
+  zoom.x = Math.min(0, Math.max(-w * (zoom.s - 1), zoom.x)); zoom.y = Math.min(0, Math.max(-h * (zoom.s - 1), zoom.y));
+  cv.style.transform = 'translate(' + zoom.x + 'px,' + zoom.y + 'px) scale(' + zoom.s + ')';
+  cv.style.touchAction = zoom.s > 1 ? 'none' : 'pan-y';
+  $('zout').disabled = zoom.s <= 1; $('zin').disabled = zoom.s >= 10;
+  if (ui.art && ui.screen === 'final') { clearTimeout(zTimer); zTimer = setTimeout(paintFinal, 140); }
+}
+function zoomAt(newS, cx, cy) {
+  newS = Math.min(10, Math.max(1, newS)); const f = newS / zoom.s;
+  zoom.x = cx - (cx - zoom.x) * f; zoom.y = cy - (cy - zoom.y) * f; zoom.s = newS; applyZoom();
+}
+$('zin').addEventListener('click', () => { const fr = $('zlayer'); zoomAt(zoom.s * 1.6, fr.clientWidth / 2, fr.clientHeight / 2); });
+$('zout').addEventListener('click', () => { const fr = $('zlayer'); zoomAt(zoom.s / 1.6, fr.clientWidth / 2, fr.clientHeight / 2); });
+const fvEl = $('zlayer');
+fvEl.addEventListener('pointerdown', e => {
+  if (pts.size === 0) dragDist = 0;
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  try { fvEl.setPointerCapture(e.pointerId); } catch (err) {}
+  if (pts.size === 2) { const p = Array.from(pts.values()); pinchD = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1; pinchS = zoom.s; }
+});
+fvEl.addEventListener('pointermove', e => {
+  const prev = pts.get(e.pointerId); if (!prev) return;
+  const dx = e.clientX - prev.x, dy = e.clientY - prev.y; pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pts.size === 1) { dragDist += Math.abs(dx) + Math.abs(dy); if (zoom.s > 1) { zoom.x += dx; zoom.y += dy; applyZoom(); } }
+  else if (pts.size === 2) {
+    const p = Array.from(pts.values()), r = $('zwrap').getBoundingClientRect(); dragDist = 99;
+    zoomAt(pinchS * Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) / pinchD, (p[0].x + p[1].x) / 2 - r.left, (p[0].y + p[1].y) / 2 - r.top);
+  }
+});
+['pointerup', 'pointercancel'].forEach(t => fvEl.addEventListener(t, e => { pts.delete(e.pointerId); }));
+fvEl.addEventListener('click', e => {
+  if (dragDist > 8) return;                                  // that was a drag or a pinch, not a tap
+  const r = fvEl.getBoundingClientRect(), P = ui.P, s = curSeg();
+  const x = Math.min(P.W - 1, Math.max(0, Math.floor((e.clientX - r.left) / r.width * P.W))), y = Math.min(P.H - 1, Math.max(0, Math.floor((e.clientY - r.top) / r.height * P.H)));
+  ui.open = s.rank[s.big[y * P.W + x]]; renderFinal();
+  const row = $('row-' + ui.open); if (row) row.scrollIntoView({ block: 'nearest' });
+});
+$('title').addEventListener('change', e => { ui.art.title = e.target.value.trim() || 'Untitled'; e.target.value = ui.art.title; persist(); });
+const say = t => { $('finmsg').textContent = t; $('finmsg').hidden = false; };
+// A brand-new artwork is a draft until Save is pressed, a color is ticked, or it is reopened from the library. While it is a draft, Back returns to the settings so the line art can still be changed.
+$('save').addEventListener('click', () => {
+  const a = ui.art; if (!a) return;
+  a.title = $('title').value.trim() || 'Untitled'; delete a.draft;
+  const ok = saveArt(true); renderFinal();
+  say(ok ? 'Saved to your library.' : 'This browser is not saving right now, so this artwork will be lost when you close the page.');
+  $('finback').focus();
+});
+$('finback').addEventListener('click', () => {
+  const a = ui.art;
+  if (a && a.draft) { startConfig(a.photo, a.title, a); return; }
+  ui.adding = false; renderDash(); show('dash');
+});
+if (window.claude && window.claude.use) window.claude.use('downloads').then(d => { saver = d; }).catch(() => {});
+$('print').addEventListener('click', async () => {
+  const blob = await new Promise(res => buildSheet(ui.P, curSeg(), ui.art.title).toBlob(res, 'image/png'));
+  if (!blob) { say('The sheet could not be made. Try fewer colors.'); return; }
+  if (sheetUrl) URL.revokeObjectURL(sheetUrl);
+  sheetUrl = URL.createObjectURL(blob); $('sheetimg').src = sheetUrl; $('sheetimg').hidden = false;
+  const manual = 'This page cannot open the print dialog. Press and hold the sheet below to save or share it, then print it.';
+  if (!saver) {                                              // on a normal website the browser can download the file directly
+    try { const a = document.createElement('a'); a.href = sheetUrl; a.download = 'paint-by-photo-line-work.png'; document.body.append(a); a.click(); a.remove(); say('Print sheet downloaded. Open it and print it.'); }
+    catch (e) { say('Press and hold the sheet below to save or share it, then print it.'); }
+    return;
+  }
+  try { await saver.save({ filename: 'paint-by-photo-line-work.png', data: blob }); say('Line work saved as an image. Open it and print it.'); }
+  catch (e) { say(e && e.code === 'declined' ? 'Not saved. Tap Print to try again.' : e && e.code === 'rate_limited' ? 'A save is already waiting for your answer.' : manual); }
+});
+$('del').addEventListener('click', () => {
+  if (!ui.delArm) { ui.delArm = true; renderFinal(); return; }
+  arts = arts.filter(a => a !== ui.art); persist(); renderDash(); show('dash');
+});
+
+/* start: saved artworks, or three samples the first time */
+async function seedSamples() {
+  const plan = [['Hills (sample)', 10, 0.2], ['Still life (sample)', 12, 0.3], ['Coast at dusk (sample)', 10, 0]];
+  for (let i = 0; i < SAMPLES.length; i++) {
+    const photo = makeSample(SAMPLES[i]).toDataURL('image/jpeg', 0.85), P = await getP(photo), s = segOf(P, plan[i][1], 5), n = s.clusters.length;
+    const done = []; for (let d = 0; d < Math.round(n * plan[i][2]); d++) done.push(d);
+    arts.push({ id: 's' + i, sample: true, title: plan[i][0], photo, k: plan[i][1], detail: 5, level: 'custom', done, n, thumb: makeThumb(P, s, done) });
+  }
+  persist();
+}
+(async function start() {
+  let fresh = true;
+  try { const saved = JSON.parse(localStorage.getItem(KEY) || 'null'); if (Array.isArray(saved) && saved.every(a => a && a.photo && a.thumb && Array.isArray(a.done))) { arts = saved; fresh = false; } } catch (e) {}
+  renderDash();
+  if (fresh) { $('dashnote').textContent = 'Preparing sample artworks…'; $('dashnote').hidden = false; await seedSamples(); renderDash(); }
+})();
+</script>
+
+</body></html>
