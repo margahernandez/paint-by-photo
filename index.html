@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="description" content="Turn any photo into a numbered paint-by-number template, with a mixing recipe for every color."><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Paint by Photo</title>
+<title>Paintly Numbers</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Recursive:slnt,wght,CASL,CRSV,MONO@-15..0,300..1000,0..1,0..1,0..1&display=swap">
 <style>
 /* Layout: a slim app bar over a wide workspace. The library is a card grid; setup and painting split into a large canvas stage and a 380px side panel, stacking to one column on phones. */
@@ -67,7 +67,7 @@ h2 { font-weight: 750; font-variation-settings: 'CASL' 1; font-size: 18px; line-
 .pick { position: relative; display: flex; flex-direction: column }
 .pick input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 1; font-size: 0 }
 .paste { min-height: 48px; box-sizing: border-box; padding: 12px 14px; border: 1.5px dashed var(--line); border-radius: 10px; font-size: 14px; color: var(--ink) }
-.paste:empty::before { content: 'Or copy a photo, then paste it here'; color: var(--muted) }
+.paste:empty::before { content: 'You can also paste your copied photo above.'; color: var(--muted) }
 
 /* library */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr)); gap: 16px }
@@ -137,7 +137,7 @@ input[type="range"] { width: 100%; height: 36px; margin: 0; accent-color: var(--
 .track { height: 8px; border-radius: 4px; background: var(--sunken); overflow: hidden }
 .track i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.3s }
 .colorshead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px }
-.sortnote { padding-block: 8px 10px; border-bottom: 1px solid var(--line) }
+.colorshead { padding-bottom: 10px; border-bottom: 1px solid var(--line) }
 .acc { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column;  }
 .acc > li { border-bottom: 1px solid var(--line) }
 .rowhead { display: flex; align-items: center; gap: 4px }
@@ -165,14 +165,14 @@ input[type="range"] { width: 100%; height: 36px; margin: 0; accent-color: var(--
 
 <header class="appbar">
   <div class="appbar-in">
-    <button type="button" class="brand" data-nav="dash" aria-label="Paint by Photo, go to your library">
+    <button type="button" class="brand" data-nav="dash" aria-label="Paintly Numbers, go to your library">
       <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
         <rect class="frame" x="1.5" y="1.5" width="29" height="29" rx="7"></rect>
         <path class="fill" d="M2.5 20.5 C8 15.5 13 22 19 16.5 S27 12.5 29.5 14 V26 a3.5 3.5 0 0 1 -3.5 3.5 H6 a3.5 3.5 0 0 1 -3.5 -3.5 Z"></path>
         <path class="ln" d="M2.5 20.5 C8 15.5 13 22 19 16.5 S27 12.5 29.5 14"></path>
         <circle class="ln" cx="10" cy="10" r="3.6"></circle>
       </svg>
-      <span>Paint by Photo</span>
+      <span>Paintly Numbers</span>
     </button>
     <span class="bar-note">Saved in this browser</span>
   </div>
@@ -182,25 +182,24 @@ input[type="range"] { width: 100%; height: 36px; margin: 0; accent-color: var(--
     <div class="pagehead">
       <div>
         <h1>Your artworks</h1>
-        <p class="lede">Turn any photo into a numbered painting template, then tick off each color as you paint it.</p>
+        <p class="lede">Turn any photo into a numbered painting that you can follow.</p>
       </div>
       <div class="ph-actions">
         <div class="seg" role="tablist" aria-label="Library">
-          <button type="button" role="tab" id="tab-outline" aria-selected="true">Outline</button>
-          <button type="button" role="tab" id="tab-refs" aria-selected="false">References</button>
+          <button type="button" role="tab" id="tab-outline" aria-selected="true">Outlined Artwork</button>
+          <button type="button" role="tab" id="tab-refs" aria-selected="false">Referenced Photo</button>
         </div>
         <div class="addwrap">
           <button type="button" class="btn primary" id="add" aria-expanded="false" aria-controls="addmenu">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 4v16M4 12h16"></path></svg>
-            New artwork
+            Create New Artwork
           </button>
           <div class="addmenu" id="addmenu" hidden>
             <p class="eyebrow">Start from a photo</p>
             <div class="pick"><input type="file" id="file" accept="image/*"><label class="btn primary" for="file">Browse files</label></div>
             <div class="pick"><input type="file" id="cam" accept="image/*" capture="environment"><label class="btn" for="cam">Take photo</label></div>
             <div class="paste" id="pastebox" contenteditable="true" role="textbox" aria-label="Paste a copied photo here"></div>
-            <p class="small muted" id="pickstatus" aria-live="polite" hidden>If no photo picker appeared, paste a copied photo above instead.</p>
-            <p class="small muted" id="fileerr" role="alert" hidden>That could not be opened as an image. Try a JPG or PNG.</p>
+            <p class="small muted" id="fileerr" role="alert" hidden>Please paste a valid file format: JPG or PNG</p>
           </div>
         </div>
       </div>
@@ -221,7 +220,7 @@ input[type="range"] { width: 100%; height: 36px; margin: 0; accent-color: var(--
             <span class="eyebrow">Preview</span>
             <div class="seg" role="group" aria-label="Preview">
               <button type="button" id="v-color" aria-pressed="true">Colored</button>
-              <button type="button" id="v-line" aria-pressed="false">Line art</button>
+              <button type="button" id="v-line" aria-pressed="false">Outline</button>
             </div>
           </div>
           <div class="canvaswell"><canvas id="cfgview" width="960" height="720" role="img" aria-label="Preview of your artwork with the current settings"></canvas></div>
@@ -230,7 +229,6 @@ input[type="range"] { width: 100%; height: 36px; margin: 0; accent-color: var(--
       <aside class="panel">
         <div class="panelsec">
           <h2 id="difflabel">Difficulty</h2>
-          <p class="small muted">Store-bought kits run from about 24 colors for beginners to 48 or more for advanced painters.</p>
         </div>
         <div class="levels" id="levels" role="group" aria-labelledby="difflabel"></div>
         <p class="small muted" id="lvlnote" aria-live="polite"></p>
@@ -248,7 +246,7 @@ input[type="range"] { width: 100%; height: 36px; margin: 0; accent-color: var(--
         <div class="stage">
           <div class="stagebar">
             <div class="seg" role="group" aria-label="Artwork view">
-              <button type="button" id="f-line" aria-pressed="true">Line art</button>
+              <button type="button" id="f-line" aria-pressed="true">Outline</button>
               <button type="button" id="f-color" aria-pressed="false">Colored</button>
             </div>
             <div class="zoombtns">
@@ -264,7 +262,7 @@ input[type="range"] { width: 100%; height: 36px; margin: 0; accent-color: var(--
               </div>
             </div>
           </div>
-          <p class="hint">Pinch or use + and − to read small numbers, drag to move around, and tap a shape to find its color.</p>
+          <p class="hint">Pinch or use + and − to zoom in and out, drag to move around the artwork, and tap a shape to find its color.</p>
         </div>
       </div>
       <aside class="panel">
@@ -276,7 +274,7 @@ input[type="range"] { width: 100%; height: 36px; margin: 0; accent-color: var(--
           <div class="actions">
             <button type="button" class="btn" id="print">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>
-              Download print sheet
+              Download the Artwork Sheet
             </button>
           </div>
           <p class="msg" id="finmsg" aria-live="polite" hidden></p>
@@ -291,10 +289,9 @@ input[type="range"] { width: 100%; height: 36px; margin: 0; accent-color: var(--
             <h2>Colors</h2>
             <div class="seg" role="group" aria-label="Sort colors">
               <button type="button" id="sort-num" aria-pressed="true">By number</button>
-              <button type="button" id="sort-amt" aria-pressed="false">Most used</button>
+              <button type="button" id="sort-amt" aria-pressed="false">Most used colors</button>
             </div>
           </div>
-          <p class="small muted sortnote" id="sortnote"></p>
           <ul class="acc" id="colors-list"></ul>
         </div>
         <div class="panelfoot"><button type="button" class="btn quiet" id="del">Delete artwork</button></div>
@@ -616,9 +613,9 @@ function buildSheet(P, s, title) {
   const rows = Math.ceil(s.order.length / 2), rowH = 84, headH = 170;
   const c = document.createElement('canvas'); c.width = IW + 2 * M; c.height = headH + IH + 60 + rows * rowH + M;
   const x = c.getContext('2d'); x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, c.width, c.height);
-  x.fillStyle = '#1B2230'; x.font = "700 60px Recursive, 'Segoe UI', sans-serif"; x.fillText(title || 'Paint by number', M, 96, IW);
+  x.fillStyle = '#1B2230'; x.font = "700 60px Recursive, 'Segoe UI', sans-serif"; x.fillText(title || 'Artwork', M, 96, IW);
   x.fillStyle = '#5A606C'; x.font = "28px Recursive, 'Segoe UI', sans-serif";
-  x.fillText(s.order.length + ' colors. Paint in number order, 1 first. Recipes are starting points: test a swatch.', M, 140, IW);
+  x.fillText(s.order.length + ' colors.', M, 140, IW);
   const t = document.createElement('canvas');
   renderFine(t, P, s, () => null, 2);
   x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high'; x.drawImage(t, M, headH, IW, IH);
@@ -728,9 +725,9 @@ function renderDash() {
   $('tab-refs').setAttribute('aria-selected', String(ui.tab === 'refs'));
   $('addmenu').hidden = !ui.adding; $('add').setAttribute('aria-expanded', String(ui.adding));
   const grid = $('grid'); grid.textContent = '';
-  const note = !arts.length ? (ui.tab === 'outline' ? 'No artworks yet. Tap the plus button to add a photo.' : 'No photos yet. Tap the plus button to add one.')
-    : ui.tab === 'refs' ? 'Your original photos. Tap one to start another artwork from it.'
-    : storeOk ? '' : 'This browser is not saving right now, so progress will be lost when you close the page.';
+  const note = !arts.length ? (ui.tab === 'outline' ? 'View your outlined artworks by starting a new artwork' : 'View your referenced photos by starting a new artwork')
+    : ui.tab === 'refs' ? 'Your original photos uploaded. Click or tap a photo to start a new outlined artwork from it.'
+    : storeOk ? '' : 'Sorry! You reached the maximum number of outlined artworks.';
   $('dashnote').textContent = note; $('dashnote').hidden = !note;
   arts.forEach(a => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'art';
@@ -762,12 +759,12 @@ document.addEventListener('click', e => { const n = e.target.closest('[data-nav]
 function viaData(f) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => loadImg(r.result).then(res, rej); r.onerror = rej; r.readAsDataURL(f); }); }
 async function openFile(f) {
   if (!f) return;
-  $('fileerr').hidden = true; $('pickstatus').hidden = true;
+  $('fileerr').hidden = true;
   let src = null, url = null;
   try { if (window.createImageBitmap) src = await createImageBitmap(f, { imageOrientation: 'from-image' }); } catch (e) {}
   if (!src) try { src = await viaData(f); } catch (e) {}
   if (!src) try { url = URL.createObjectURL(f); src = await loadImg(url); } catch (e) {}
-  try { if (!src) throw 0; await startConfig(toPhoto(src), 'Untitled ' + (arts.filter(a => !a.sample).length + 1)); }
+  try { if (!src) throw 0; await startConfig(toPhoto(src), 'Artwork ' + (arts.filter(a => !a.sample).length + 1)); }
   catch (e) { $('fileerr').hidden = false; }
   if (url) URL.revokeObjectURL(url);
   if (src && src.close) src.close();
@@ -775,7 +772,6 @@ async function openFile(f) {
 function pickFile(e) { const f = e.target.files && e.target.files[0]; openFile(f).then(() => { e.target.value = ''; }); }
 ['file', 'cam'].forEach(id => {
   $(id).addEventListener('change', pickFile);
-  $(id).addEventListener('click', () => { $('pickstatus').hidden = false; });
 });
 const imageIn = list => Array.from(list || []).find(f => f && /^image\//.test(f.type));
 function clipImage(dt) {
@@ -796,7 +792,7 @@ document.addEventListener('paste', e => {
     pb.textContent = '';
     if (!src) { $('fileerr').hidden = false; return; }
     $('fileerr').hidden = true;
-    loadImg(src).then(i2 => startConfig(toPhoto(i2), 'Untitled ' + (arts.filter(a => !a.sample).length + 1))).catch(() => { $('fileerr').hidden = false; });
+    loadImg(src).then(i2 => startConfig(toPhoto(i2), 'Artwork ' + (arts.filter(a => !a.sample).length + 1))).catch(() => { $('fileerr').hidden = false; });
   }, 60);
 });
 document.addEventListener('dragover', e => { e.preventDefault(); });
@@ -909,8 +905,6 @@ function renderFinal() {
   const byAmt = ui.sort === 'amt', rows = s.order.map((j, i) => ({ j, i }));
   if (byAmt) rows.sort((p, q) => s.clusters[q.j].area - s.clusters[p.j].area);
   $('sort-num').setAttribute('aria-pressed', String(!byAmt)); $('sort-amt').setAttribute('aria-pressed', String(byAmt));
-  $('sortnote').textContent = byAmt ? 'Biggest areas first, so you know which colors to mix the most of. The numbers still match the canvas.'
-    : 'Each number matches the shapes marked with it on the canvas. Painting from 1 up works roughly from the background forward, so later colors sit on top.';
   $('colors-list').innerHTML = rows.map(({ j, i }) => {
     const c = s.clusters[j], done = a.done.indexOf(i) >= 0, open = ui.open === i;
     return '<li class="' + (done ? 'done' : '') + '" id="row-' + i + '"><div class="rowhead">' +
@@ -985,14 +979,14 @@ fvEl.addEventListener('click', e => {
   ui.open = s.rank[s.big[y * P.W + x]]; renderFinal();
   const row = $('row-' + ui.open); if (row) row.scrollIntoView({ block: 'nearest' });
 });
-$('title').addEventListener('change', e => { ui.art.title = e.target.value.trim() || 'Untitled'; e.target.value = ui.art.title; persist(); });
+$('title').addEventListener('change', e => { ui.art.title = e.target.value.trim() || 'Artwork'; e.target.value = ui.art.title; persist(); });
 const say = t => { $('finmsg').textContent = t; $('finmsg').hidden = false; };
 // A brand-new artwork is a draft until Save is pressed, a color is ticked, or it is reopened from the library. While it is a draft, Back returns to the settings so the line art can still be changed.
 $('save').addEventListener('click', () => {
   const a = ui.art; if (!a) return;
-  a.title = $('title').value.trim() || 'Untitled'; delete a.draft;
+  a.title = $('title').value.trim() || 'Artwork'; delete a.draft;
   const ok = saveArt(true); renderFinal();
-  say(ok ? 'Saved to your library.' : 'This browser is not saving right now, so this artwork will be lost when you close the page.');
+  say(ok ? 'Saved to your library.' : 'Sorry! You reached the maximum number of outlined artworks.');
   $('finback').focus();
 });
 $('finback').addEventListener('click', () => {
@@ -1008,11 +1002,11 @@ $('print').addEventListener('click', async () => {
   sheetUrl = URL.createObjectURL(blob); $('sheetimg').src = sheetUrl; $('sheetimg').hidden = false;
   const manual = 'This page cannot open the print dialog. Press and hold the sheet below to save or share it, then print it.';
   if (!saver) {                                              // on a normal website the browser can download the file directly
-    try { const a = document.createElement('a'); a.href = sheetUrl; a.download = 'paint-by-photo-line-work.png'; document.body.append(a); a.click(); a.remove(); say('Print sheet downloaded. Open it and print it.'); }
+    try { const a = document.createElement('a'); a.href = sheetUrl; a.download = 'paintly-numbers.png'; document.body.append(a); a.click(); a.remove(); say('Artwork Sheet downloaded. You can open and print it.'); }
     catch (e) { say('Press and hold the sheet below to save or share it, then print it.'); }
     return;
   }
-  try { await saver.save({ filename: 'paint-by-photo-line-work.png', data: blob }); say('Line work saved as an image. Open it and print it.'); }
+  try { await saver.save({ filename: 'paintly-numbers.png', data: blob }); say('Line work saved as an image. Open it and print it.'); }
   catch (e) { say(e && e.code === 'declined' ? 'Not saved. Tap Print to try again.' : e && e.code === 'rate_limited' ? 'A save is already waiting for your answer.' : manual); }
 });
 $('del').addEventListener('click', () => {
@@ -1034,7 +1028,7 @@ async function seedSamples() {
   let fresh = true;
   try { const saved = JSON.parse(localStorage.getItem(KEY) || 'null'); if (Array.isArray(saved) && saved.every(a => a && a.photo && a.thumb && Array.isArray(a.done))) { arts = saved; fresh = false; } } catch (e) {}
   renderDash();
-  if (fresh) { $('dashnote').textContent = 'Preparing sample artworks…'; $('dashnote').hidden = false; await seedSamples(); renderDash(); }
+  if (fresh) { $('dashnote').textContent = 'Loading Paintly Numbers'; $('dashnote').hidden = false; await seedSamples(); renderDash(); }
 })();
 </script>
 
