@@ -67,7 +67,7 @@ h2 { font-weight: 750; font-variation-settings: 'CASL' 1; font-size: 18px; line-
 .pick { position: relative; display: flex; flex-direction: column }
 .pick input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 1; font-size: 0 }
 .paste { min-height: 48px; box-sizing: border-box; padding: 12px 14px; border: 1.5px dashed var(--line); border-radius: 10px; font-size: 14px; color: var(--ink) }
-.paste:empty::before { content: 'You can also paste your copied photo above.'; color: var(--muted) }
+.paste:empty::before { content: 'You can also paste your copied photo here.'; color: var(--muted) }
 
 /* library */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr)); gap: 16px }
@@ -684,11 +684,12 @@ const LEVELS = {
 };
 const DETAIL = ['', 'Very simple', 'Simple', 'Balanced', 'Detailed', 'Very detailed'];
 const dOf = a => a.detail || (a.fine ? 5 : 1);
-let arts = [], storeOk = true, saver = null, sheetUrl = null;
+let arts = [], storeOk = true, storeFull = false, saver = null, sheetUrl = null;
 const ui = { screen: 'dash', tab: 'outline', adding: false, cfg: null, art: null, P: null, open: -1, delArm: false, sort: 'num' };
 const pcache = new Map();
 
-function persist() { try { localStorage.setItem(KEY, JSON.stringify(arts)); storeOk = true; } catch (e) { storeOk = false; } return storeOk; }
+function persist() { try { localStorage.setItem(KEY, JSON.stringify(arts)); storeOk = true; } catch (e) { storeOk = false; storeFull = !!e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22 || e.code === 1014); } return storeOk; }
+function storeMsg() { return storeFull ? 'Sorry! You reached the maximum number of outlined artworks.' : 'Sorry! This browser isn\u2019t letting us save your artworks. Try a regular (non-private) window.'; }
 function loadImg(url) { return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = url; }); }
 async function getP(photo) {
   if (pcache.has(photo)) return pcache.get(photo);
@@ -727,7 +728,7 @@ function renderDash() {
   const grid = $('grid'); grid.textContent = '';
   const note = !arts.length ? (ui.tab === 'outline' ? 'View your outlined artworks by starting a new artwork' : 'View your referenced photos by starting a new artwork')
     : ui.tab === 'refs' ? 'Your original photos uploaded. Click or tap a photo to start a new outlined artwork from it.'
-    : storeOk ? '' : 'Sorry! You reached the maximum number of outlined artworks.';
+    : storeOk ? '' : storeMsg();
   $('dashnote').textContent = note; $('dashnote').hidden = !note;
   arts.forEach(a => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'art';
@@ -986,7 +987,7 @@ $('save').addEventListener('click', () => {
   const a = ui.art; if (!a) return;
   a.title = $('title').value.trim() || 'Artwork'; delete a.draft;
   const ok = saveArt(true); renderFinal();
-  say(ok ? 'Saved to your library.' : 'Sorry! You reached the maximum number of outlined artworks.');
+  say(ok ? 'Saved to your library.' : storeMsg());
   $('finback').focus();
 });
 $('finback').addEventListener('click', () => {
