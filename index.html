@@ -228,6 +228,46 @@ input[type="range"] { width: 100%; height: 36px; margin: 0; accent-color: var(--
 .mix .name { flex: 1; min-width: 0 }
 .mix .parts { font-family: var(--mono); font-variation-settings: 'MONO' 1; font-weight: 600; font-size: 13px; white-space: nowrap }
 
+/* recipe notes */
+.recnote { display: flex; align-items: flex-start; gap: 10px; margin: 0; font-size: 13px; color: var(--muted) }
+.recnote .mini { flex: none; width: 32px; display: flex; justify-content: center; padding-top: 1px }
+.recnote .mini i { width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18) }
+.palnote { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; font-size: 13px; color: var(--muted) }
+.linkbtn { min-height: 32px; padding: 0 4px; border: 0; background: transparent; color: var(--accent); font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px }
+.linkbtn:hover { color: var(--ink) }
+
+/* my paints */
+.navbtn { min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font-weight: 650; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap }
+.navbtn:hover, .navbtn[aria-current="page"] { border-color: var(--ink) }
+.panelhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px }
+.panelhead .btn.quiet { min-height: 40px; padding: 0 10px; margin-inline: -10px }
+.panelhead .btn.danger { margin-inline: 0 }
+.panelhead h2 .mono { font-size: 14px; font-weight: 600; color: var(--muted); margin-left: 6px }
+.paintlist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 8px 16px }
+.paint { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 4px 4px 4px 0; border-bottom: 1px solid var(--line); min-width: 0 }
+.sw { position: relative; flex: none; width: 36px; height: 36px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18), 0 0 0 3px var(--surface), 0 0 0 4px var(--line) }
+label.sw { cursor: pointer }
+.sw input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer }
+.sw:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 4px }
+.pn { flex: 1; min-width: 0; display: flex; flex-direction: column; font-weight: 650; line-height: 1.3 }
+.pn > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.pn .pb { font-size: 12px; font-weight: 500; color: var(--muted) }
+.rm { flex: none; width: 40px; height: 40px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center }
+.rm:hover { background: var(--sunken); color: var(--danger) }
+.warns { list-style: none; margin: 0; padding: 12px 14px; border-radius: 10px; background: var(--accent-soft); display: flex; flex-direction: column; gap: 4px; font-size: 14px }
+.empty { padding: 20px 0 8px; color: var(--muted) }
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 650 }
+.field select, .field input[type="text"] { box-sizing: border-box; width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-weight: 500 }
+.field select:hover, .field input[type="text"]:hover { border-color: var(--ink) }
+.colorfield { display: flex; align-items: center; gap: 12px; min-height: 44px; font-weight: 500 }
+.colorfield .sw { width: 40px; height: 40px }
+.setpreview { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0 }
+.setpreview i { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18) }
+.panel .divider { border: 0; border-top: 1px solid var(--line); margin: 0 }
+@media (max-width: 959px) { .addpanel { order: -1 } }
+.palnote .linkbtn, .small .linkbtn { padding: 0 1px }
+@media (max-width: 420px) { .navbtn .nblabel { display: none } .navbtn { padding: 0 10px } }
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important } }
 </style>
 
@@ -246,6 +286,10 @@ input[type="range"] { width: 100%; height: 36px; margin: 0; accent-color: var(--
         <rect class="edge" x="1.5" y="1.5" width="29" height="29" rx="7"></rect>
       </svg>
       <span>Paintly Numbers</span>
+    </button>
+    <button type="button" class="navbtn" id="paintsbtn" aria-label="My paints">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2 0-1.5-1.2-2-1.2-3.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-3.9-4-7-9-7z"></path><circle cx="7.5" cy="11" r="1.3"></circle><circle cx="10.5" cy="7" r="1.3"></circle><circle cx="15.5" cy="7.5" r="1.3"></circle></svg>
+      <span class="nblabel">My paints</span>
     </button>
   </div>
 </header>
@@ -397,6 +441,7 @@ input[type="range"] { width: 100%; height: 36px; margin: 0; accent-color: var(--
         <div>
           <div class="colorshead">
             <h2>Colors</h2>
+            <p class="palnote" id="palnote"></p>
             <div class="seg" role="group" aria-label="Sort colors">
               <button type="button" id="sort-num" aria-pressed="true">By number</button>
               <button type="button" id="sort-amt" aria-pressed="false">Most used colors</button>
@@ -404,6 +449,50 @@ input[type="range"] { width: 100%; height: 36px; margin: 0; accent-color: var(--
           </div>
           <ul class="acc" id="colors-list"></ul>
         </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="screen" id="s-paints" hidden>
+    <div class="pagehead slim">
+      <button type="button" class="back" id="paintsback">&larr; Library</button>
+    </div>
+    <div>
+      <h1>My paints</h1>
+      <p class="lede">Every recipe is mixed only from the paints listed here. Add the sets you own, or add paints one by one.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <div class="panelhead">
+          <h2 id="mytitle"></h2>
+          <button type="button" class="btn quiet" id="paintreset" hidden></button>
+        </div>
+        <p class="small muted" id="mynote" hidden></p>
+        <ul class="warns" id="paintwarn" hidden></ul>
+        <p class="msg" id="paintmsg" aria-live="polite" hidden></p>
+        <ul class="paintlist" id="paintlist"></ul>
+      </div>
+      <aside class="panel addpanel">
+        <div class="panelsec">
+          <h2>Add a set</h2>
+          <label class="field">Brand<select id="setbrand"></select></label>
+          <label class="field">Set<select id="setname"></select></label>
+          <div class="setpreview" id="setpreview" aria-hidden="true"></div>
+          <button type="button" class="btn primary wide" id="setadd"></button>
+          <p class="msg" id="setmsg" aria-live="polite" hidden></p>
+        </div>
+        <hr class="divider">
+        <div class="panelsec">
+          <h2>Add one paint</h2>
+          <label class="field">Paint name<input type="text" id="pname" maxlength="40" placeholder="For example, Phthalo blue" autocomplete="off"></label>
+          <div class="field">Color
+            <div class="colorfield"><label class="sw" id="pcolorsw" style="background:#3E8FC4"><input type="color" id="pcolor" value="#3E8FC4" aria-label="Paint color"></label><span class="mono" id="pcolorhex">#3E8FC4</span><span class="small muted">Tap the swatch to pick a color</span></div>
+          </div>
+          <button type="button" class="btn wide" id="padd">Add paint</button>
+          <p class="msg" id="paddmsg" aria-live="polite" hidden></p>
+        </div>
+        <hr class="divider">
+        <p class="small muted">Swatch colors are close matches to each paint straight from the tube. If one looks different from your paint, tap its swatch to adjust it.</p>
       </aside>
     </div>
   </section>
@@ -437,43 +526,99 @@ const PAINTS = [
   { n: 'Ultramarine', h: '#2B3A9E' }, { n: 'Cerulean blue', h: '#3E8FC4' },
   { n: 'Burnt sienna', h: '#8A4A2B' }, { n: 'Viridian', h: '#1F7A66' }
 ];
-PAINTS.forEach(p => {
-  p.S = p.s || 1;
+const hexLab = h => lin2lab(s2l(parseInt(h.substr(1, 2), 16)), s2l(parseInt(h.substr(3, 2), 16)), s2l(parseInt(h.substr(5, 2), 16)));
+// Whites cover strongly in a mix, so they scatter more light than other paints.
+const isWhite = h => { const l = hexLab(h); return l[0] > 90 && Math.hypot(l[1], l[2]) < 10; };
+function prepPaint(p) {
+  p.S = p.s || (isWhite(p.h) ? 6 : 1);
   p.K = [1, 3, 5].map(i => { const R = Math.min(0.98, Math.max(0.02, s2l(parseInt(p.h.substr(i, 2), 16)))); return (1 - R) * (1 - R) / (2 * R) * p.S; });
-});
-function mixLin(ids, parts) {
+  return p;
+}
+PAINTS.forEach(prepPaint);
+// The starter palette always decides which colors count as the same when shapes are made, so an artwork's shapes
+// never change. Recipes are mixed from whichever paints are in use (the starter palette or your own paints).
+const BASE = { paints: PAINTS, cands: null };
+function mixLin(paints, ids, parts) {
   const out = [0, 0, 0];
   for (let c = 0; c < 3; c++) {
     let K = 0, S = 0;
-    for (let i = 0; i < ids.length; i++) { const p = PAINTS[ids[i]]; K += parts[i] * p.K[c]; S += parts[i] * p.S; }
+    for (let i = 0; i < ids.length; i++) { const p = paints[ids[i]]; K += parts[i] * p.K[c]; S += parts[i] * p.S; }
     const q = K / S; out[c] = 1 + q - Math.sqrt(q * q + 2 * q);
   }
   return out;
 }
 const gcd = (a, b) => b ? gcd(b, a % b) : a;
-let CANDS = null;
-function candidates() {
-  if (CANDS) return CANDS;
-  const V = [0.5, 1, 2, 3, 4, 6], out = [], n = PAINTS.length;
-  const ok = parts => { const mn = Math.min.apply(null, parts), mx = Math.max.apply(null, parts); return mn === 0.5 ? mx >= 2 : parts.reduce(gcd) === 1; };
-  const add = (ids, parts) => {
-    const lin = mixLin(ids, parts); let tot = 0; for (const p of parts) tot += p;
-    out.push({ ids, parts, lin, lab: lin2lab(lin[0], lin[1], lin[2]), pen: 1.5 * (ids.length - 1) + 0.15 * tot });
-  };
-  for (let i = 0; i < n; i++) add([i], [1]);
-  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) for (const a of V) for (const b of V) if (ok([a, b])) add([i, j], [a, b]);
-  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) for (let k = j + 1; k < n; k++)
-    for (const a of V) for (const b of V) for (const c of V) if (ok([a, b, c])) add([i, j, k], [a, b, c]);
-  return (CANDS = out);
-}
-function bestRecipe(lab) {
-  let best = null, bs = 1e9, bd = 0;
-  for (const c of candidates()) {
-    const d = Math.hypot(c.lab[0] - lab[0], c.lab[1] - lab[1], c.lab[2] - lab[2]);
-    if (d + c.pen < bs) { bs = d + c.pen; best = c; bd = d; }
+const PART_V = [0.5, 1, 2, 3, 4, 6];
+const partsOk = parts => { const mn = Math.min.apply(null, parts), mx = Math.max.apply(null, parts); return mn === 0.5 ? mx >= 2 : parts.reduce(gcd) === 1; };
+const MIX2 = [], MIX3 = [];
+for (const a of PART_V) for (const b of PART_V) if (partsOk([a, b])) MIX2.push([a, b]);
+for (const a of PART_V) for (const b of PART_V) for (const c of PART_V) if (partsOk([a, b, c])) MIX3.push([a, b, c]);
+// Every mix of one, two or three paints is worked out once per palette and kept in flat arrays.
+// Up to FULL_PALETTE paints every three-paint mix is kept; bigger palettes keep three-paint mixes of the paints
+// that come closest for each color.
+const FULL_PALETTE = 30, TRIPLE_POOL = 12;
+function mixStore(paints, combos) {
+  let n = 0; for (const c of combos) n += c[1].length;
+  const st = { n, L: new Float64Array(n), A: new Float64Array(n), B: new Float64Array(n), pen: new Float64Array(n), ids: new Uint8Array(n * 3), parts: new Float64Array(n * 3), cnt: new Uint8Array(n) };
+  let k = 0;
+  for (const [ids, partsList] of combos) for (const parts of partsList) {
+    const lin = mixLin(paints, ids, parts), lab = lin2lab(lin[0], lin[1], lin[2]); let tot = 0; for (const p of parts) tot += p;
+    st.L[k] = lab[0]; st.A[k] = lab[1]; st.B[k] = lab[2]; st.pen[k] = 1.5 * (ids.length - 1) + 0.15 * tot; st.cnt[k] = ids.length;
+    for (let t = 0; t < ids.length; t++) { st.ids[k * 3 + t] = ids[t]; st.parts[k * 3 + t] = parts[t]; }
+    k++;
   }
-  const items = best.ids.map((id, i) => ({ paint: PAINTS[id], parts: best.parts[i] })).sort((a, b) => b.parts - a.parts);
-  return { items, rgb: best.lin.map(l2s), dE: bd, cand: best };
+  return st;
+}
+function tripleCombos(pool) {
+  const out = [];
+  for (let a = 0; a < pool.length; a++) for (let b = a + 1; b < pool.length; b++) for (let c = b + 1; c < pool.length; c++) out.push([[pool[a], pool[b], pool[c]], MIX3]);
+  return out;
+}
+function candidates(pal) {
+  if (pal.cands) return pal.cands;
+  const n = pal.paints.length, combos = [];
+  for (let i = 0; i < n; i++) combos.push([[i], [[1]]]);
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) combos.push([[i, j], MIX2]);
+  if (n <= FULL_PALETTE) { const all = []; for (let i = 0; i < n; i++) all.push(i); combos.push(...tripleCombos(all)); }
+  return (pal.cands = mixStore(pal.paints, combos));
+}
+// Finds the mix with the best balance of closeness and simplicity. The distance is only worked out exactly for
+// mixes that could still win, which gives the same answer as checking every mix in full.
+function scan(st, lab, best) {
+  const l0 = lab[0], a0 = lab[1], b0 = lab[2], L = st.L, A = st.A, B = st.B, pen = st.pen;
+  for (let k = 0; k < st.n; k++) {
+    const room = best.s - pen[k]; if (room <= 0) continue;
+    const dl = L[k] - l0, da = A[k] - a0, db = B[k] - b0, q = dl * dl + da * da + db * db;
+    if (q > room * room * 1.000001 + 1e-9) continue;
+    const d = Math.hypot(dl, da, db);
+    if (d + pen[k] < best.s) { best.s = d + pen[k]; best.st = st; best.k = k; best.d = d; }
+  }
+  return best;
+}
+function bestRecipe(lab, pal) {
+  pal = pal || BASE;
+  const base = candidates(pal), best = scan(base, lab, { s: 1e9, st: null, k: -1, d: 0 });
+  if (pal.paints.length > FULL_PALETTE) {
+    // A very big palette: also try three-paint mixes of the paints that come closest, plus white and the darkest paint.
+    // each paint's best showing on its own or in a pair; the closest paints go into the pool
+    const n = pal.paints.length, top = new Float64Array(n).fill(1e9);
+    for (let k = 0; k < base.n; k++) {
+      const v = Math.hypot(base.L[k] - lab[0], base.A[k] - lab[1], base.B[k] - lab[2]) + base.pen[k];
+      for (let t = 0; t < base.cnt[k]; t++) { const i = base.ids[k * 3 + t]; if (v < top[i]) top[i] = v; }
+    }
+    const order = []; for (let i = 0; i < n; i++) order.push(i);
+    order.sort((x, y) => top[x] - top[y] || x - y);
+    const pool = order.slice(0, TRIPLE_POOL), want = i => { if (i >= 0 && pool.indexOf(i) < 0) pool.push(i); };
+    want(pal.paints.findIndex(p => p.S > 1));
+    let dk = -1, dl = 101; pal.paints.forEach((p, i) => { const l = hexLab(p.h)[0]; if (l < dl) { dl = l; dk = i; } }); want(dk);
+    pool.sort((x, y) => x - y);
+    scan(mixStore(pal.paints, tripleCombos(pool)), lab, best);
+  }
+  const st = best.st, k = best.k, ids = [], parts = [];
+  for (let t = 0; t < st.cnt[k]; t++) { ids.push(st.ids[k * 3 + t]); parts.push(st.parts[k * 3 + t]); }
+  const lin = mixLin(pal.paints, ids, parts), cand = { ids, parts, lin, lab: [st.L[k], st.A[k], st.B[k]], pen: st.pen[k] };
+  const items = ids.map((id, i) => ({ paint: pal.paints[id], parts: parts[i] })).sort((a, b) => b.parts - a.parts);
+  return { items, rgb: lin.map(l2s), dE: best.d, cand, key: ids.join('.') + ':' + parts.join('.') };
 }
 // Two colors this close once mixed look the same on paper, so they share one number.
 const MIX_SAME = 4;
@@ -786,22 +931,24 @@ function edgeDistance(big, W, H, dist) {
   for (let i = N - W - 2; i >= 0; i--) { const v = Math.min(dist[i + 1], dist[i + W]) + 1; if (v < dist[i]) dist[i] = v; }
 }
 // keepR, when given: a shape at least this big that stands out from every neighbour it touches is kept (a pupil).
-function mergeSmall(big, W, H, m, minR, labs, keepR) {
+// lock, when given: shapes that touch a locked pixel are always kept.
+function mergeSmall(big, W, H, m, minR, labs, keepR, lock) {
   const N = W * H, dist = new Uint16Array(N), seen = new Uint8Array(N), q = new Int32Array(N), cnt = new Uint32Array(m);
   for (let pass = 0; pass < 8; pass++) {
     edgeDistance(big, W, H, dist); seen.fill(0); let changed = 0;
     for (let st = 0; st < N; st++) {
       if (seen[st]) continue;
-      const j = big[st]; let head = 0, tail = 0, best = 0; q[tail++] = st; seen[st] = 1; cnt.fill(0);
+      const j = big[st]; let head = 0, tail = 0, best = 0, locked = false; q[tail++] = st; seen[st] = 1; cnt.fill(0);
       while (head < tail) {
         const i = q[head++], x = i % W;
         if (dist[i] > best) best = dist[i];
+        if (lock && lock[i]) locked = true;
         if (x > 0) { if (big[i - 1] !== j) cnt[big[i - 1]]++; else if (!seen[i - 1]) { seen[i - 1] = 1; q[tail++] = i - 1; } }
         if (x < W - 1) { if (big[i + 1] !== j) cnt[big[i + 1]]++; else if (!seen[i + 1]) { seen[i + 1] = 1; q[tail++] = i + 1; } }
         if (i >= W) { if (big[i - W] !== j) cnt[big[i - W]]++; else if (!seen[i - W]) { seen[i - W] = 1; q[tail++] = i - W; } }
         if (i + W < N) { if (big[i + W] !== j) cnt[big[i + W]]++; else if (!seen[i + W]) { seen[i + W] = 1; q[tail++] = i + W; } }
       }
-      if (best >= minR) continue;
+      if (best >= minR || locked) continue;
       let to = -1, bc = 0; for (let t = 0; t < m; t++) if (cnt[t] > bc) { bc = cnt[t]; to = t; }
       if (labs && to >= 0) {                                 // among neighbours it really touches, join the closest color
         let bd = 1e9; const a = labs[j];
@@ -984,7 +1131,8 @@ function renderSoft(cv, P, s) {
   x.putImageData(img, 0, 0);
 }
 const partsText = p => p === 0.5 ? 'A touch' : p === 1 ? '1 part' : p + ' parts';
-const recipeOf = c => c.recipe || (c.recipe = bestRecipe(c.lab));
+// Recipes are worked out again whenever your paints change.
+const recipeOf = c => { if (!c.recipe || c.recipePal !== myPal) { c.recipe = bestRecipe(c.lab, myPal); c.recipePal = myPal; } return c.recipe; };
 /* ---------- the Artwork Sheet: a PDF at real paper size ----------
    Paper cannot zoom, so the sheet is simplified for the size it prints at: edges are smoothed, any shape
    narrower than MIN_SHAPE_MM joins its neighbour, every shape gets a number of at least NUM_MIN_MM, and the
@@ -1014,8 +1162,36 @@ function printShapes(P, s, plan) {
   let big = modeFilter(s.big, W, H, m, 2); big = modeFilter(big, W, H, m, 2);
   const minR = Math.max(2, Math.ceil((MIN_SHAPE_MM / plan.mmpp - 1) / 2));
   const keepR = Math.max(2, Math.ceil((MIN_DETAIL_MM / plan.mmpp - 1) / 2));   // small details that stand out (a pupil) stay, down to about 2mm
-  mergeSmall(big, W, H, m, minR, s.clusters.map(c => c.lab), keepR);
+  const labs = s.clusters.map(c => c.lab), lock = new Uint8Array(W * H);
+  mergeSmall(big, W, H, m, minR, labs, keepR);
+  // Every color stays on paper: a color that was only in thin slivers gets its widest shape back, kept as it is.
+  for (let round = 0; round < 3; round++) {
+    const has = new Uint8Array(m); for (let i = 0; i < big.length; i++) has[big[i]] = 1;
+    const lost = []; for (let j = 0; j < m; j++) if (!has[j]) lost.push(j);
+    if (!lost.length) break;
+    for (const j of lost) for (const i of widestShape(s.big, W, H, j)) { big[i] = j; lock[i] = 1; }
+    mergeSmall(big, W, H, m, minR, labs, keepR, lock);
+  }
   return big;
+}
+// The pixels of a color's widest connected shape (the one with the most room inside for paint and a number).
+function widestShape(lab, W, H, j) {
+  const N = W * H, dist = new Uint16Array(N), seen = new Uint8Array(N), q = new Int32Array(N);
+  edgeDistance(lab, W, H, dist);
+  let bestPx = null, bestR = -1, bestN = 0;
+  for (let st = 0; st < N; st++) {
+    if (seen[st] || lab[st] !== j) continue;
+    let head = 0, tail = 0, r = 0; q[tail++] = st; seen[st] = 1;
+    while (head < tail) {
+      const i = q[head++], x = i % W; if (dist[i] > r) r = dist[i];
+      if (x > 0 && !seen[i - 1] && lab[i - 1] === j) { seen[i - 1] = 1; q[tail++] = i - 1; }
+      if (x < W - 1 && !seen[i + 1] && lab[i + 1] === j) { seen[i + 1] = 1; q[tail++] = i + 1; }
+      if (i >= W && !seen[i - W] && lab[i - W] === j) { seen[i - W] = 1; q[tail++] = i - W; }
+      if (i + W < N && !seen[i + W] && lab[i + W] === j) { seen[i + W] = 1; q[tail++] = i + W; }
+    }
+    if (r > bestR || (r === bestR && tail > bestN)) { bestR = r; bestN = tail; bestPx = q.slice(0, tail); }
+  }
+  return bestPx || [];
 }
 
 // Number spots inside one rectangle of the picture, so a shape cut by the page seam is numbered on both pages.
@@ -1178,6 +1354,46 @@ const $ = id => document.getElementById(id);
 // Show or hide a loading overlay. Restarting it each time keeps the label cycle and the fade-in delay fresh.
 function loading(id, on) { const el = $(id); if (on) { el.hidden = true; void el.offsetWidth; el.hidden = false; } else el.hidden = true; }
 const nextPaint = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+/* ---------- your paints ----------
+   Recipes are mixed from the paints you own: whole sets picked by brand, single paints added by hand, or both.
+   Swatch colors are close approximations of each paint straight from the tube; you can retune any swatch to match yours. */
+const PAINT_SETS = [
+  { brand: 'Himi (Miya)', set: 'Jelly Gouache, 24 colors', paints: [
+    ['White', '#F7F5EF'], ['Black', '#1E1D1F'], ['Burnt umber', '#5A3A26'], ['Ochre', '#C08A2E'], ['Earth yellow', '#D9A441'], ['Nude', '#E9B99A'],
+    ['Purple rose', '#B0386E'], ['Rose', '#E0457B'], ['Deep red', '#A9202E'], ['Ponceau red', '#D7262E'], ['Orange', '#F07D1A'], ['Medium yellow', '#F6C21C'],
+    ['Lemon yellow', '#F5E43A'], ['Grass green', '#3E8E3A'], ['Jade green', '#1F8A6E'], ['Pale green', '#9ED38A'], ['Yellow-green', '#A8C83A'], ['Pale purple', '#B9A3D6'],
+    ['Sky blue', '#6EB8E6'], ['Prussian blue', '#1D3A57'], ['Acid blue', '#1E9BB8'], ['Cobalt blue', '#2A5DB0'], ['Ultramarine', '#2B3A9E'], ['Violet', '#5B3A8E']] },
+  { brand: 'Holbein', set: "Artists' Gouache, set of 12", paints: [
+    ['Permanent white', '#F6F4EE'], ['Ivory black', '#22201F'], ['Lemon yellow', '#F2E23C'], ['Permanent yellow deep', '#F2A419'], ['Flame red', '#E2322A'], ['Carmine', '#A3173A'],
+    ['Violet', '#5A3590'], ['Ultramarine deep', '#24308F'], ['Turquoise blue', '#1AA3B8'], ['Permanent green light', '#6CC04A'], ['Permanent green deep', '#1D7A4A'], ['Burnt sienna', '#8A4A2B']] },
+  { brand: 'Daler-Rowney', set: 'Simply Gouache, set of 12', paints: [
+    ['White', '#F6F4EE'], ['Black', '#201F21'], ['Lemon yellow', '#F3E23E'], ['Yellow ochre', '#C8962F'], ['Vermilion', '#E2452B'], ['Crimson', '#A81C3A'],
+    ['Coeruleum blue', '#3E8FC4'], ['Ultramarine blue', '#2B3A9E'], ['Sap green', '#4F7A2A'], ['Viridian', '#1F7A66'], ['Burnt sienna', '#8A4A2B'], ['Burnt umber', '#5A3B27']] },
+  { brand: 'Winsor & Newton', set: 'Designers Gouache, introductory set of 10', paints: [
+    ['Zinc white', '#F4F3EE'], ['Ivory black', '#22201F'], ['Primary yellow', '#F5D21B'], ['Permanent yellow deep', '#F2A51C'], ['Yellow ochre', '#C6922F'],
+    ['Spectrum red', '#D9302C'], ['Primary red', '#C4213F'], ['Primary blue', '#1C78B8'], ['Ultramarine', '#2A3A9C'], ['Permanent green medium', '#1F9D55']] },
+  { brand: 'Winsor & Newton', set: "Cotman Watercolour, Sketchers' Pocket Box of 12", paints: [
+    ['Chinese white', '#F4F3EE'], ['Lemon yellow hue', '#F2E04A'], ['Cadmium yellow hue', '#F4BE1E'], ['Yellow ochre', '#C9972E'], ['Cadmium red pale hue', '#E0452E'], ['Alizarin crimson hue', '#A21F3A'],
+    ['Ultramarine', '#2B3A9E'], ['Cerulean blue hue', '#2F86C2'], ['Viridian hue', '#1A7A68'], ['Sap green', '#4F7A2A'], ['Burnt sienna', '#8A4A2B'], ['Burnt umber', '#5A3B27']] },
+  { brand: 'Winsor & Newton', set: 'Winton Oil Colour, set of 10', paints: [
+    ['Titanium white', '#F6F5F0'], ['Lamp black', '#1D1D1F'], ['Cadmium lemon hue', '#F3E03A'], ['Cadmium orange hue', '#EE7F1F'], ['Cadmium red deep hue', '#A82228'],
+    ['Magenta', '#A3215F'], ['French ultramarine', '#26338F'], ['Cerulean blue hue', '#2F86C2'], ['Viridian hue', '#1A7A68'], ['Burnt sienna', '#8A4A2B']] },
+  { brand: 'Sakura Koi', set: 'Watercolor Pocket Field Sketch Box, 12 colors', paints: [
+    ['Chinese white', '#F4F3EE'], ['Ivory black', '#22201F'], ['Lemon yellow', '#F2E04A'], ['Deep yellow', '#F2B21E'], ['Yellow ochre', '#C9972E'], ['Vermillion hue', '#E2452A'],
+    ['Light red', '#B5492F'], ['Crimson lake', '#B01E3E'], ['Yellow green', '#9CC23A'], ['Viridian hue', '#1A7A68'], ['Cobalt blue hue', '#2C5FB0'], ['Prussian blue', '#1E3A5A']] },
+  { brand: 'Liquitex', set: 'Basics Acrylic, set of 12', paints: [
+    ['Titanium white', '#F6F5F0'], ['Mars black', '#1D1C1E'], ['Primary yellow', '#F5D11E'], ['Cadmium orange hue', '#EE7A1F'], ['Primary red', '#D42A2E'], ['Alizarin crimson hue', '#8E1F33'],
+    ['Dioxazine purple', '#3B2466'], ['Primary blue', '#1A5FA8'], ['Phthalo green', '#0F6B55'], ['Light green permanent', '#5DBB4A'], ['Burnt sienna', '#8A4A2B'], ['Burnt umber', '#4F3424']] }
+];
+const PAINTS_KEY = 'paintly.paints.v1';
+let myPaints = [];                           // [{ n, h, b }] — empty means the starter palette is in use
+let myPal = BASE;
+function usePaints(list) {
+  myPaints = list;
+  myPal = list.length ? { paints: list.map(p => prepPaint({ n: p.n, h: p.h, b: p.b || '' })), cands: null } : BASE;
+}
+function savePaints() { try { localStorage.setItem(PAINTS_KEY, JSON.stringify(myPaints)); return true; } catch (e) { return false; } }
+try { const saved = JSON.parse(localStorage.getItem(PAINTS_KEY) || 'null'); if (Array.isArray(saved)) usePaints(saved.filter(p => p && typeof p.n === 'string' && /^#[0-9A-Fa-f]{6}$/.test(p.h))); } catch (e) {}
 const KEY = 'blockin.artworks.v1';
 // Typical paint-by-number kits run from about 24 colors for beginners to 36 and then 48 or more for advanced painters.
 const LEVELS = {
@@ -1218,7 +1434,8 @@ const pct = a => a.n ? Math.round(100 * a.done.length / a.n) : 0;
 
 function show(screen) {
   ui.screen = screen;
-  ['dash', 'config', 'final'].forEach(n => { $('s-' + n).hidden = n !== screen; });
+  ['dash', 'config', 'final', 'paints'].forEach(n => { $('s-' + n).hidden = n !== screen; });
+  $('paintsbtn').setAttribute('aria-current', screen === 'paints' ? 'page' : 'false');
   window.scrollTo(0, 0);
 }
 
@@ -1455,9 +1672,14 @@ async function openArt(a) {
   renderFinal(); loading('finload', false);
 }
 const curSeg = () => artSeg(ui.P, ui.art);
-function recipeHtml(c) {
-  const r = recipeOf(c), total = r.items.reduce((t, it) => t + it.parts, 0);
-  return '<ul class="mix">' + r.items.map(it => { const sz = Math.round(12 + 26 * Math.sqrt(it.parts / total)); return '<li><span class="blobbox"><span class="blob" style="width:' + sz + 'px;height:' + sz + 'px;background:' + it.paint.h + '"></span></span><span class="name">' + it.paint.n + '</span><span class="parts">' + partsText(it.parts) + '</span></li>'; }).join('') + '</ul>';
+// A recipe can be a little off when your paints cannot reach a color, and two numbers can come out as the same mix.
+const OFF_MIX = 10;
+function recipeHtml(c, s, i) {
+  const r = recipeOf(c), total = r.items.reduce((t, it) => t + it.parts, 0), notes = [];
+  if (r.dE > OFF_MIX) notes.push('<p class="recnote"><span class="mini"><i style="background:' + css(r.rgb) + '"></i></span><span>Your paints can’t quite reach this color. Mixed, it comes out like this swatch, the closest they can make.</span></p>');
+  const twins = s.order.map((j, n) => n).filter(n => n !== i && recipeOf(s.clusters[s.order[n]]).key === r.key).map(n => n + 1);
+  if (twins.length) notes.push('<p class="recnote"><span class="mini"></span><span>With your paints, this mixes the same as color ' + twins.join(', ') + '.</span></p>');
+  return '<ul class="mix">' + r.items.map(it => { const sz = Math.round(12 + 26 * Math.sqrt(it.parts / total)); return '<li><span class="blobbox"><span class="blob" style="width:' + sz + 'px;height:' + sz + 'px;background:' + it.paint.h + '"></span></span><span class="name">' + esc(it.paint.n) + '</span><span class="parts">' + partsText(it.parts) + '</span></li>'; }).join('') + '</ul>' + notes.join('');
 }
 // The picture is only redrawn when something visible changed. Lines get thinner as you zoom in.
 let paintKey = '', zTimer = 0;
@@ -1489,6 +1711,8 @@ function renderFinal() {
   $('dellabel').textContent = ui.delArm ? 'Tap again to delete for good' : 'Delete artwork';
   const byAmt = ui.sort === 'amt', rows = s.order.map((j, i) => ({ j, i }));
   if (byAmt) rows.sort((p, q) => s.clusters[q.j].area - s.clusters[p.j].area);
+  $('palnote').innerHTML = (myPaints.length ? 'Recipes use your ' + myPaints.length + (myPaints.length === 1 ? ' paint.' : ' paints.') : 'Recipes use the starter palette of 10 paints.') +
+    ' <button type="button" class="linkbtn" id="palgo">' + (myPaints.length ? 'Edit my paints' : 'Add my paints') + '</button>';
   $('sort-num').setAttribute('aria-pressed', String(!byAmt)); $('sort-amt').setAttribute('aria-pressed', String(byAmt));
   $('colors-list').innerHTML = rows.map(({ j, i }) => {
     const c = s.clusters[j], done = a.done.indexOf(i) >= 0, open = ui.open === i;
@@ -1497,7 +1721,7 @@ function renderFinal() {
       '<span class="pot" style="background:' + css(c.rgb) + ';color:' + (c.lab[0] > 58 ? '#17181C' : '#FFFFFF') + '">' + (i + 1) + '</span><span class="nm"><span>' + c.name + '</span><span class="cov">' + coverText(c.area) + '</span></span>' +
       '<svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>' +
       '<label class="tick"><input type="checkbox" data-tick="' + i + '"' + (done ? ' checked' : '') + ' aria-label="Mark ' + c.name + ' as painted"></label></div>' +
-      '<div class="recipe" id="rec-' + i + '"' + (open ? '' : ' hidden') + '>' + (open ? recipeHtml(c) : '') + '</div></li>';
+      '<div class="recipe" id="rec-' + i + '"' + (open ? '' : ' hidden') + '>' + (open ? recipeHtml(c, s, i) : '') + '</div></li>';
   }).join('');
 }
 function saveArt(withThumb) {
@@ -1646,6 +1870,93 @@ $('del').addEventListener('click', () => {
   if (!ui.delArm) { ui.delArm = true; renderFinal(); $('del').focus(); return; }
   artMenu(false);
   deleteFromLibrary(new Set([ui.art.id]), 'outline'); renderDash(); show('dash');
+});
+
+/* my paints screen */
+const esc = t => String(t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+const pui = { from: 'dash', brand: PAINT_SETS[0].brand, set: 0, resetArm: false };
+const XMARK = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>';
+function openPaints() {
+  if (ui.screen !== 'paints') pui.from = ui.screen;
+  ui.adding = false; pui.resetArm = false; ['paintmsg', 'setmsg', 'paddmsg'].forEach(id => { $(id).hidden = true; });
+  $('paintsback').textContent = pui.from === 'final' ? '← Back to your artwork' : pui.from === 'config' ? '← Back to setup' : '← Library';
+  renderPaints(); show('paints');
+}
+function paintWarnings() {
+  if (!myPaints.length) return [];
+  const w = [], labs = myPaints.map(p => hexLab(p.h));
+  if (myPaints.length < 3) w.push('Add at least 3 paints so recipes can come close to your photos.');
+  if (!myPaints.some(p => isWhite(p.h))) w.push('No white yet, so light colors will mix darker than the photo.');
+  if (!labs.some(l => l[0] < 25)) w.push('No black or very dark paint yet, so the darkest areas will mix lighter than the photo.');
+  return w;
+}
+function renderPaints() {
+  const own = myPaints.length > 0, list = own ? myPaints : PAINTS;
+  $('mytitle').innerHTML = (own ? 'Your paints' : 'Starter palette') + '<span class="mono">' + list.length + '</span>';
+  $('mynote').hidden = own;
+  $('mynote').innerHTML = 'You haven’t added your own paints yet, so recipes use these 10 common colors. Add a set or a paint to start your own list, or <button type="button" class="linkbtn" id="paintcopy">edit this list</button>.';
+  $('paintreset').hidden = !own;
+  $('paintreset').textContent = pui.resetArm ? 'Tap again to remove all' : 'Use the starter palette';
+  $('paintreset').classList.toggle('danger', pui.resetArm);
+  const w = paintWarnings(); $('paintwarn').hidden = !w.length; $('paintwarn').innerHTML = w.map(t => '<li>' + t + '</li>').join('');
+  $('paintlist').innerHTML = list.map((p, i) => '<li class="paint">' +
+    (own ? '<label class="sw" style="background:' + p.h + '"><input type="color" value="' + p.h.toLowerCase() + '" data-recolor="' + i + '" aria-label="Adjust the color of ' + esc(p.n) + '"></label>'
+      : '<span class="sw" style="background:' + p.h + '"></span>') +
+    '<span class="pn"><span>' + esc(p.n) + '</span>' + (own && p.b ? '<span class="pb">' + esc(p.b) + '</span>' : '') + '</span>' +
+    (own ? '<button type="button" class="rm" data-remove="' + i + '" aria-label="Remove ' + esc(p.n) + '">' + XMARK + '</button>' : '') + '</li>').join('');
+  // the set picker
+  const brands = [...new Set(PAINT_SETS.map(s => s.brand))], sets = PAINT_SETS.filter(s => s.brand === pui.brand);
+  $('setbrand').innerHTML = brands.map(b => '<option' + (b === pui.brand ? ' selected' : '') + '>' + esc(b) + '</option>').join('');
+  $('setname').innerHTML = sets.map((s, i) => '<option value="' + i + '"' + (i === pui.set ? ' selected' : '') + '>' + esc(s.set) + '</option>').join('');
+  const st = sets[pui.set] || sets[0];
+  $('setpreview').innerHTML = st.paints.map(p => '<i style="background:' + p[1] + '" title="' + esc(p[0]) + '"></i>').join('');
+  $('setadd').textContent = 'Add these ' + st.paints.length + ' paints';
+}
+function changePaints(list, msg, where) {
+  usePaints(list);
+  const ok = savePaints();
+  pui.resetArm = false; renderPaints();
+  const m = !ok ? 'This browser isn’t letting us save your paints, so they will reset when you leave.' : msg;
+  ['paintmsg', 'setmsg', 'paddmsg'].forEach(id => { $(id).hidden = true; });
+  const el = $(where || 'paintmsg'); el.textContent = m || ''; el.hidden = !m;
+}
+const brandLabel = s => s.brand + ' · ' + s.set.split(',')[0];
+$('paintsbtn').addEventListener('click', openPaints);
+document.addEventListener('click', e => { if (e.target.closest('#palgo')) openPaints(); });
+$('paintsback').addEventListener('click', () => { show(pui.from); if (pui.from === 'final' && ui.art) renderFinal(); });
+$('setbrand').addEventListener('change', () => { pui.brand = $('setbrand').value; pui.set = 0; renderPaints(); });
+$('setname').addEventListener('change', () => { pui.set = +$('setname').value; renderPaints(); });
+$('setadd').addEventListener('click', () => {
+  const st = PAINT_SETS.filter(s => s.brand === pui.brand)[pui.set], b = brandLabel(st);
+  const fresh = st.paints.filter(p => !myPaints.some(q => q.n.toLowerCase() === p[0].toLowerCase() && q.b === b));
+  const skipped = st.paints.length - fresh.length;
+  changePaints(myPaints.concat(fresh.map(p => ({ n: p[0], h: p[1], b }))),
+    !fresh.length ? 'These paints are already in your list.' : 'Added ' + fresh.length + (fresh.length === 1 ? ' paint' : ' paints') + ' from ' + st.brand + (skipped ? '. ' + skipped + ' were already in your list.' : '.'), 'setmsg');
+});
+$('pcolor').addEventListener('input', () => { const v = $('pcolor').value.toUpperCase(); $('pcolorsw').style.background = v; $('pcolorhex').textContent = v; });
+$('padd').addEventListener('click', () => {
+  const n = $('pname').value.trim(), h = $('pcolor').value.toUpperCase();
+  if (!n) { $('paddmsg').textContent = 'Please give the paint a name.'; $('paddmsg').hidden = false; $('pname').focus(); return; }
+  $('paddmsg').hidden = true; $('pname').value = '';
+  changePaints(myPaints.concat([{ n, h, b: 'Added by you' }]), 'Added ' + n + '.', 'paddmsg');
+});
+$('pname').addEventListener('keydown', e => { if (e.key === 'Enter') $('padd').click(); });
+$('paintlist').addEventListener('click', e => {
+  const r = e.target.closest('[data-remove]'); if (!r) return;
+  const i = +r.dataset.remove, p = myPaints[i];
+  changePaints(myPaints.filter((q, k) => k !== i), 'Removed ' + p.n + '.');
+  const next = document.querySelector('[data-remove="' + Math.min(i, myPaints.length - 1) + '"]'); (next || $('setbrand')).focus();
+});
+$('paintlist').addEventListener('change', e => {
+  const r = e.target.closest('[data-recolor]'); if (!r) return;
+  const i = +r.dataset.recolor, list = myPaints.slice(); list[i] = Object.assign({}, list[i], { h: r.value.toUpperCase() });
+  changePaints(list, 'Updated the color of ' + list[i].n + '.');
+});
+$('paintlist').addEventListener('input', e => { const r = e.target.closest('[data-recolor]'); if (r) r.parentNode.style.background = r.value; });
+document.addEventListener('click', e => { if (e.target.closest('#paintcopy')) changePaints(PAINTS.map(p => ({ n: p.n, h: p.h, b: 'Starter palette' })), 'The starter palette is now your list. Remove any paints you don’t have.'); });
+$('paintreset').addEventListener('click', () => {
+  if (!pui.resetArm) { pui.resetArm = true; renderPaints(); $('paintreset').focus(); return; }
+  changePaints([], 'Recipes now use the starter palette.'); $('setbrand').focus();
 });
 
 /* start: saved artworks, or three samples the first time */
